@@ -2125,6 +2125,8 @@ int ssl_cipher_get_cert_index(const SSL_CIPHER *c)
         return SSL_PKEY_GOST94;
     else if (alg_a & SSL_aGOST01)
         return SSL_PKEY_GOST01;
+    else if (alg_a & SSL_aOQSPICNIC)
+      return SSL_PKEY_OQS;
     return -1;
 }
 

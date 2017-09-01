@@ -21,6 +21,7 @@ extern int ec_main(int argc, char *argv[]);
 extern int ecparam_main(int argc, char *argv[]);
 extern int x509_main(int argc, char *argv[]);
 extern int genrsa_main(int argc, char *argv[]);
+extern int genoqs_main(int argc, char *argv[]);
 extern int gendsa_main(int argc, char *argv[]);
 extern int genpkey_main(int argc, char *argv[]);
 extern int s_server_main(int argc, char *argv[]);
@@ -102,6 +103,9 @@ FUNCTION functions[] = {
     {FUNC_TYPE_GENERAL, "x509", x509_main},
 #ifndef OPENSSL_NO_RSA
     {FUNC_TYPE_GENERAL, "genrsa", genrsa_main},
+#endif
+#ifndef OPENSSL_NO_OQS
+    {FUNC_TYPE_GENERAL, "genoqs", genoqs_main},
 #endif
 #ifndef OPENSSL_NO_DSA
     {FUNC_TYPE_GENERAL, "gendsa", gendsa_main},
