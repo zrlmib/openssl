@@ -433,12 +433,11 @@ int ssl3_accept(SSL *s)
         case SSL3_ST_SW_CERT_B:
             /* Check if it is anon DH or anon ECDH, */
             /* normal PSK or KRB5 or SRP */
-	  if ((!
+	  if (!
                 (s->s3->tmp.
                  new_cipher->algorithm_auth & (SSL_aNULL | SSL_aKRB5 |
                                                SSL_aSRP))
-	       || s->s3->tmp.new_cipher->algorithm_auth & SSL_aOQSPICNIC) /* OQS sig */
-&& !(s->s3->tmp.new_cipher->algorithm_mkey & SSL_kPSK)) {
+	         && !(s->s3->tmp.new_cipher->algorithm_mkey & SSL_kPSK)) {
                 ret = ssl3_send_server_certificate(s);
                 if (ret <= 0)
                     goto end;

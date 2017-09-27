@@ -347,10 +347,9 @@ int ssl3_connect(SSL *s)
 #endif
             /* Check if it is anon DH/ECDH, SRP auth */
             /* or PSK */
-            if ((!
+            if (!
                 (s->s3->tmp.
-		 new_cipher->algorithm_auth & (SSL_aNULL | SSL_aSRP)))
-		 || s->s3->tmp.new_cipher->algorithm_auth & SSL_aOQSPICNIC  /* OQS sig */
+		 new_cipher->algorithm_auth & (SSL_aNULL | SSL_aSRP))
                     && !(s->s3->tmp.new_cipher->algorithm_mkey & SSL_kPSK)) {
                 ret = ssl3_get_server_certificate(s);
                 if (ret <= 0)
@@ -1826,10 +1825,6 @@ int ssl3_get_key_exchange(SSL *s)
                                 sess_cert->peer_pkeys[SSL_PKEY_DSA_SIGN].
                                 x509);
 # endif
-        if (alg_a & SSL_aOQSPICNIC) { /* OQS sig */ // not sure this is needed
-	  use_large_sig = 1; // Picnic has a large sig, we need more space to encode length
-	  pkey=X509_get_pubkey(s->session->sess_cert->peer_pkeys[SSL_PKEY_OQS].x509);
-	}
 
         /* else anonymous DH, so no certificate or pkey. */
 
@@ -2145,7 +2140,7 @@ int ssl3_get_key_exchange(SSL *s)
         }
     } else {
         /* aNULL, aSRP or kPSK do not need public keys */
-       if ((alg_a == SSL_aOQSPICNIC || !(alg_a & (SSL_aNULL | SSL_aSRP))) && !(alg_k & SSL_kPSK)) { // OQS sig
+      if ((!(alg_a & (SSL_aNULL | SSL_aSRP))) && !(alg_k & SSL_kPSK)) {
             /* Might be wrong key type, check it */
             if (ssl3_check_cert_and_algorithm(s))
                 /* Otherwise this shouldn't happen */
