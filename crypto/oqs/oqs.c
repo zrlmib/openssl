@@ -13,7 +13,7 @@
 #include "oqs.h"
 
 /* 
- * FIXMEOQS (remove this)
+ * FIXMEOQS
  * OQS note: the content of this file should be distributed in the OpenSSL
  * code base to avoid a manual registration of the OQS algs, but this makes
  * it simple to develop and test. 
@@ -21,11 +21,6 @@
  * Error codes should be reviewed and functions defined for the OQSerr macro. 
  *
  * The code needs to be generalized to support more than one sig alg.
- */
-
-/*
- * This file contains OQS-related code. This could be distributed in various
- * files like the other OpenSSL algs, but we keep them in one file for simplicity.
  */
 
 static int g_initialized = 0;
