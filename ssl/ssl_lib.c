@@ -2256,6 +2256,9 @@ void ssl_set_cert_masks(CERT *c, const SSL_CIPHER *cipher)
 #ifndef OPENSSL_NO_ECDH
     int have_ecdh_tmp, ecdh_ok;
 #endif
+#ifndef OPENSSL_NO_OQS
+    int oqs_sign;
+#endif
 #ifndef OPENSSL_NO_EC
     X509 *x = NULL;
     EVP_PKEY *ecc_pkey = NULL;
@@ -2324,6 +2327,14 @@ void ssl_set_cert_masks(CERT *c, const SSL_CIPHER *cipher)
         mask_k |= SSL_kGOST;
         mask_a |= SSL_aGOST94;
     }
+
+#ifndef OPENSSL_NO_OQS
+    /* OQS sig */
+    cpk = &(c->pkeys[SSL_PKEY_OQS]);
+    if (cpk->x509 != NULL && cpk->privatekey != NULL) {
+      mask_a |= SSL_aOQSPICNIC; 
+    }
+#endif
 
     if (rsa_enc || (rsa_tmp && rsa_sign))
         mask_k |= SSL_kRSA;
@@ -2462,8 +2473,6 @@ void ssl_set_cert_masks(CERT *c, const SSL_CIPHER *cipher)
     emask_k |= SSL_kPSK;
     emask_a |= SSL_aPSK;
 #endif
-
-    mask_a |= SSL_aOQSPICNIC; /* OQS sig */
 
     c->mask_k = mask_k;
     c->mask_a = mask_a;

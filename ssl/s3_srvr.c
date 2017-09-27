@@ -1637,6 +1637,7 @@ int ssl3_send_server_key_exchange(SSL *s)
     unsigned char *oqskex_srvr_msg = NULL;
     size_t oqskex_srvr_msg_len = 0;
 #endif
+    size_t siglen_len = 2; // length of the sig len field. Defaults to 2, some OQS schemes need more
     EVP_PKEY *pkey;
     const EVP_MD *md = NULL;
     unsigned char *p, *d;
@@ -2015,6 +2016,9 @@ int ssl3_send_server_key_exchange(SSL *s)
         if ((!(s->s3->tmp.new_cipher->algorithm_auth & (SSL_aNULL | SSL_aSRP))
 	     || s->s3->tmp.new_cipher->algorithm_auth & SSL_aOQSPICNIC)
             && !(s->s3->tmp.new_cipher->algorithm_mkey & SSL_kPSK)) {
+	    if (s->s3->tmp.new_cipher->algorithm_auth & SSL_aOQSPICNIC) {
+	      siglen_len = 4; /* OQS note: Picnic needs 4 bytes to encode the sig len */
+	    }
             if ((pkey = ssl_get_sign_pkey(s, s->s3->tmp.new_cipher, &md))
                 == NULL) {
                 al = SSL_AD_DECODE_ERROR;
@@ -2025,7 +2029,7 @@ int ssl3_send_server_key_exchange(SSL *s)
             if (SSL_USE_SIGALGS(s))
                 kn += 2;
             /* Allow space for signature length */
-            kn += 4; /* OQS note: increased from 2 for OQS sig */
+            kn += siglen_len;
         } else {
             pkey = NULL;
             kn = 0;
@@ -2171,14 +2175,21 @@ int ssl3_send_server_key_exchange(SSL *s)
                         || EVP_SignUpdate(&md_ctx, &(s->s3->server_random[0]),
                                           SSL3_RANDOM_SIZE) <= 0
                         || EVP_SignUpdate(&md_ctx, d, n) <= 0
-		        || EVP_SignFinal(&md_ctx, &(p[4]), /* OQS note: was p[2] */
+		        || EVP_SignFinal(&md_ctx, &(p[siglen_len]),
                                          (unsigned int *)&i, pkey) <= 0) {
                     SSLerr(SSL_F_SSL3_SEND_SERVER_KEY_EXCHANGE, ERR_LIB_EVP);
                     al = SSL_AD_INTERNAL_ERROR;
                     goto f_err;
                 }
-                l2n(i, p); // OQS note: was s2n, increased size for OQS sig
-                n += i + 4; // OQS note: was + 2, increased size for OQS sig
+		if (siglen_len == 2) {
+		  s2n(i, p);
+		} else if (siglen_len == 4) {
+		  l2n(i, p);
+		} else {
+		  SSLerr(SSL_F_SSL3_SEND_SERVER_KEY_EXCHANGE, ERR_R_INTERNAL_ERROR);
+		  goto f_err;
+		}
+                n += i + siglen_len;
                 if (SSL_USE_SIGALGS(s))
                     n += 2;
             } else {
