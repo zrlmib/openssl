@@ -2016,7 +2016,12 @@ int ssl3_send_server_key_exchange(SSL *s)
 	     || s->s3->tmp.new_cipher->algorithm_auth & SSL_aOQSPICNIC)
             && !(s->s3->tmp.new_cipher->algorithm_mkey & SSL_kPSK)) {
 	    if (s->s3->tmp.new_cipher->algorithm_auth & SSL_aOQSPICNIC) {
-	      siglen_len = 4; /* OQS note: Picnic needs 4 bytes to encode the sig len */
+	      /* OQS note: Picnic needs 4 bytes to encode the sig len.
+	       * This breaks TLS1.2 which defines a DigitallySigned struct
+	       * as having a max length of 2^16-1, but we increase the size
+	       * for experimenation.
+	       */
+	      siglen_len = 4;
 	    }
             if ((pkey = ssl_get_sign_pkey(s, s->s3->tmp.new_cipher, &md))
                 == NULL) {

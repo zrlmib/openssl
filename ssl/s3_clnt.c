@@ -1862,8 +1862,14 @@ int ssl3_get_key_exchange(SSL *s)
         param_len = 2 + srvr_oqskex_msg_len;
 
 #ifndef OPENSSL_NO_OQS
-        if (alg_a & SSL_aOQSPICNIC) {/* OQS sig */
-	  use_large_sig = 1; // Picnic has a large sig, we need more space to encode lenght
+        if (alg_a & SSL_aOQSPICNIC) {
+	  /* OQS note: Picnic needs 4 bytes to encode the sig len. Setting
+	   * use_large_sig to 1 will reserve enough space to encode the sig.
+	   * This breaks TLS1.2 which defines a DigitallySigned struct
+	   * as having a max length of 2^16-1, but we increase the size
+	   * for experimenation.
+	   */
+	  use_large_sig = 1;
 	  pkey=X509_get_pubkey(s->session->sess_cert->peer_pkeys[SSL_PKEY_OQS].x509);
 	}
 #endif
