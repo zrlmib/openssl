@@ -271,6 +271,17 @@ static EVP_PKEY_METHOD oqs_pkey_meth =
 // ASN.1 artifacts
 /////////////////////////////////////////////////////////
 
+/* Define OIDs for OQS artifacts */
+/* Picnic. TODO: add the other Picnic variants.
+ *    Note: these OIDs are _NOT_ official and are temp placeholders
+ *          1 3 6 1 4 1 311 = Microsoft
+ *                       99 = Place holder
+ *                        1 = Picnic
+ *                        1 = SHA256
+ */
+#define PicnicWithSHA256_OID "1 3 6 1 4 1 311 99 1 1"
+#define PicnicWithSHA256_name "PicnicWithSHA256" /* same short and long name */
+
 // Secret key
 typedef struct {
   long algid;
@@ -524,7 +535,7 @@ static EVP_PKEY_ASN1_METHOD oqs_asn1_meth =
       NID_oqs_picnic_default, // pkey_id
       NID_oqs_picnic_default, // pkey_base_id
       0, // pkey_flags
-      "PicnicWithSHA256", // pem_str
+      PicnicWithSHA256_name, // pem_str
       "OpenSSL OQS method", // info
       oqs_pub_decode, // pub_decode
       oqs_pub_encode, // pub_encode
@@ -560,7 +571,7 @@ void OQS_add_all_algorithms()
     // add the OQS methods
     EVP_PKEY_asn1_add0(&oqs_asn1_meth);
     EVP_PKEY_meth_add0(&oqs_pkey_meth);
-    if (!OBJ_create("1 3 6 1 4 1 8301 3 1 3 3 1", "PicnicWithSHA256", "PicnicWithSHA256")) {
+    if (!OBJ_create(PicnicWithSHA256_OID, PicnicWithSHA256_name, PicnicWithSHA256_name)) {
       OQSerr(0, ERR_R_FATAL);
       return;
     }
