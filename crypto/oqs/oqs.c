@@ -186,7 +186,7 @@ int pkey_oqs_keygen_init(EVP_PKEY_CTX *ctx)
     return 0;
   }
   OQS_PKEY_CTX *oqs_ctx = ctx->data;
-  return oqs_pkey_ctx_init(oqs_ctx, OQS_SIG_picnic_default); // TODO: don't hardcode
+  return oqs_pkey_ctx_init(oqs_ctx, OQS_SIG_picnic_default); // TODO: don't hardcode, map it from ctx->pmeth->pkey_id
 }
 
 int pkey_oqs_keygen(EVP_PKEY_CTX *ctx, EVP_PKEY *pkey)
@@ -330,7 +330,7 @@ static int oqs_pub_encode(X509_PUBKEY *pk, const EVP_PKEY *pkey)
     return 0;
   }
   oqsasn1pk asn1;
-  asn1.algid = OQS_SIG_picnic_default; // FIXMEOQS: don't hardcode
+  asn1.algid = OQS_SIG_picnic_default; // FIXMEOQS: don't hardcode, map it from pkey->type
   asn1.pk = asn1_octet_string_from(oqs->pk, oqs->s->pub_key_len);
   if (!asn1.pk) {
     OQSerr(0, ERR_R_FATAL);
@@ -408,7 +408,7 @@ static int oqs_priv_encode(PKCS8_PRIV_KEY_INFO *p8, const EVP_PKEY *pkey)
     }
 
   oqsasn1sk asn1;
-  asn1.algid = OQS_SIG_picnic_default; // FIXMEOQS: don't hardcode
+  asn1.algid = OQS_SIG_picnic_default; // FIXMEOQS: don't hardcode, map it from pkey->type
   asn1.sk = asn1_octet_string_from(oqs->sk, oqs->s->priv_key_len);
   if (!asn1.sk) {
     OQSerr(0, ERR_R_FATAL);
