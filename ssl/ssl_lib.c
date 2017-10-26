@@ -2256,9 +2256,6 @@ void ssl_set_cert_masks(CERT *c, const SSL_CIPHER *cipher)
 #ifndef OPENSSL_NO_ECDH
     int have_ecdh_tmp, ecdh_ok;
 #endif
-#ifndef OPENSSL_NO_OQS
-    int oqs_sign;
-#endif
 #ifndef OPENSSL_NO_EC
     X509 *x = NULL;
     EVP_PKEY *ecc_pkey = NULL;
