@@ -120,6 +120,7 @@
 #endif
 #include <openssl/ocsp.h>
 #include <openssl/rand.h>
+#include <openssl/oqs.h>
 #include "ssl_locl.h"
 
 const char tls1_version_str[] = "TLSv1" OPENSSL_VERSION_PTEXT;
@@ -1232,7 +1233,6 @@ void ssl_set_client_disabled(SSL *s)
         c->mask_k |= SSL_kSRP;
     }
 # endif
-    c->mask_a &= (~NID_oqs_picnic_default);  /* OQS sig */
     c->valid = 1;
 }
 
@@ -3640,7 +3640,7 @@ static tls12_lookup tls12_sig[] = {
     {EVP_PKEY_RSA, TLSEXT_signature_rsa},
     {EVP_PKEY_DSA, TLSEXT_signature_dsa},
     {EVP_PKEY_EC, TLSEXT_signature_ecdsa},
-    {EVP_PKEY_OQS, TLSEXT_signature_oqs} /* OQS sig */
+    {NID_oqs_picnic_default, TLSEXT_signature_oqs} /* OQS sig FIXMEOQS: replace NID with EVP_PKEY_OQS?*/
 };
 
 static int tls12_find_id(int nid, tls12_lookup *table, size_t tlen)

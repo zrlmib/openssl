@@ -6,10 +6,12 @@
 #include <openssl/pem.h>
 #include <openssl/ssl.h>
 
+#include "crypto/evp/evp_locl.h" /* in openssl/ */ 
+#include "crypto/asn1/asn1_locl.h" /* in openssl/ */
+
 #include <oqs/rand.h>
 #include <oqs/common.h>
 #include <oqs/sig.h>
-
 #include "oqs.h"
 
 /* 
@@ -21,9 +23,38 @@
  * Error codes should be reviewed and functions defined for the OQSerr macro. 
  *
  * The code needs to be generalized to support more than one sig alg.
+ * TODO: can be done by having _one_ NID_oqs id and only use the OQS_SIG_... ones
+ * in the OQS_PKEY_CTX struct.
  */
 
 static int g_initialized = 0;
+
+/*
+ * OQS context
+ */
+typedef struct
+{
+  OQS_SIG *s;
+  uint8_t *sk;
+  uint8_t *pk;
+  int references;
+  EVP_MD *md;
+} OQS_PKEY_CTX;
+
+/*
+ * Maps OpenSSL NIDs to OQS IDs
+ */
+int get_oqs_alg_id(int openssl_nid)
+{
+  switch (openssl_nid)
+    {
+    case NID_oqs_picnic_default:
+      return OQS_SIG_picnic_default; 
+    default:
+      return -1;
+    }
+
+}
 
 int OQS_up_ref(OQS_PKEY_CTX *key)
 {
@@ -31,16 +62,9 @@ int OQS_up_ref(OQS_PKEY_CTX *key)
   return ((i > 1) ? 1 : 0);
 }
 
-int EVP_PKEY_set1_OQS(EVP_PKEY *pkey, OQS_PKEY_CTX *key)
-{             
-  int ret = EVP_PKEY_assign(pkey, EVP_PKEY_OQS, key);
-  if(ret) OQS_up_ref(key);
-  return ret;
-}             
-
 int pkey_oqs_init(EVP_PKEY_CTX *ctx)
 {
-  OQS_PKEY_CTX *oqs  = OPENSSL_malloc(sizeof(OQS_PKEY_CTX));
+  OQS_PKEY_CTX *oqs = OPENSSL_malloc(sizeof(OQS_PKEY_CTX));
   if (!oqs) {
     return 0;
   }
@@ -186,7 +210,7 @@ int pkey_oqs_keygen_init(EVP_PKEY_CTX *ctx)
     return 0;
   }
   OQS_PKEY_CTX *oqs_ctx = ctx->data;
-  return oqs_pkey_ctx_init(oqs_ctx, OQS_SIG_picnic_default); // TODO: don't hardcode, map it from ctx->pmeth->pkey_id
+  return oqs_pkey_ctx_init(oqs_ctx, get_oqs_alg_id(ctx->pmeth->pkey_id));
 }
 
 int pkey_oqs_keygen(EVP_PKEY_CTX *ctx, EVP_PKEY *pkey)
@@ -200,7 +224,12 @@ int pkey_oqs_keygen(EVP_PKEY_CTX *ctx, EVP_PKEY *pkey)
   }
   
   pkey->pkey.ptr = (void*) oqs_ctx;
-  EVP_PKEY_set1_OQS(pkey, oqs_ctx);
+  if (EVP_PKEY_assign(pkey, ctx->pmeth->pkey_id, oqs_ctx)) {
+    OQS_up_ref(oqs_ctx);
+  } else {
+    goto err;
+  }
+
   return 1;
 
  err:
@@ -325,12 +354,17 @@ static int oqs_pub_encode(X509_PUBKEY *pk, const EVP_PKEY *pkey)
   void *pval = NULL;
   int ptype = V_ASN1_UNDEF;
   ASN1_STRING *penc = ASN1_STRING_new(); // FIXMEOQS: leaks! can't free it otherwise fails later
+  int algid = get_oqs_alg_id(pkey->type);
   if (!oqs->pk) {
     OQSerr(0, ERR_R_FATAL);
     return 0;
   }
+  if (algid < 0) {
+    OQSerr(0, ERR_R_FATAL);
+    return 0;
+  }
   oqsasn1pk asn1;
-  asn1.algid = OQS_SIG_picnic_default; // FIXMEOQS: don't hardcode, map it from pkey->type
+  asn1.algid = algid;
   asn1.pk = asn1_octet_string_from(oqs->pk, oqs->s->pub_key_len);
   if (!asn1.pk) {
     OQSerr(0, ERR_R_FATAL);
@@ -339,7 +373,7 @@ static int oqs_pub_encode(X509_PUBKEY *pk, const EVP_PKEY *pkey)
   // i2d_TYPE converts an ASN.1 object in an internal standardized form
   // to its DER encoding and stuffs it into a character string
   penc->length = i2d_oqsasn1pk(&asn1,&penc->data);
-  return X509_PUBKEY_set0_param(pk, OBJ_nid2obj(NID_oqs_picnic_default),
+  return X509_PUBKEY_set0_param(pk, OBJ_nid2obj(pkey->type),
 				ptype, pval, penc->data, penc->length);
 }
 
@@ -363,7 +397,11 @@ static int oqs_priv_decode(EVP_PKEY *pkey, PKCS8_PRIV_KEY_INFO *p8)
   oqs_pkey_ctx_init(oqs_ctx, asn1->algid);
   memcpy(oqs_ctx->sk, asn1->sk->data, oqs_ctx->s->priv_key_len); // FIXMEOQS: should the len come from the asn1 struct
   memcpy(oqs_ctx->pk, asn1->pk->data, oqs_ctx->s->pub_key_len);
-  rc = EVP_PKEY_set1_OQS(pkey, oqs_ctx);
+  if (EVP_PKEY_assign(pkey, pkey->type, oqs_ctx)) {
+    OQS_up_ref(oqs_ctx);
+  } else {
+    return 0;
+  }
 
   // cleanup:
   if (a.sk) { ASN1_OCTET_STRING_free(a.sk); }
@@ -391,7 +429,13 @@ static int oqs_pub_decode(EVP_PKEY *pkey, X509_PUBKEY *pubkey)
   OQS_PKEY_CTX *oqs_ctx = OPENSSL_malloc(sizeof(OQS_PKEY_CTX)); // FIXMEOQS: leaks
   oqs_pkey_ctx_init(oqs_ctx, asn1->algid);
   memcpy(oqs_ctx->pk, asn1->pk->data, oqs_ctx->s->pub_key_len);
-  return EVP_PKEY_set1_OQS(pkey, oqs_ctx);
+  if (EVP_PKEY_assign(pkey, pkey->type, oqs_ctx)) {
+    OQS_up_ref(oqs_ctx);
+  } else {
+    return 0;
+  }
+
+  return 1;
 }
 
 static int oqs_priv_encode(PKCS8_PRIV_KEY_INFO *p8, const EVP_PKEY *pkey)
@@ -401,14 +445,18 @@ static int oqs_priv_encode(PKCS8_PRIV_KEY_INFO *p8, const EVP_PKEY *pkey)
   ASN1_STRING *prkey  = NULL;
 
   OQS_PKEY_CTX *oqs = (OQS_PKEY_CTX*)pkey->pkey.ptr;
-  if (!oqs || !oqs->sk)
-    {
-      OQSerr(0, ERR_R_FATAL);
-      goto err;
-    }
+  int algid = get_oqs_alg_id(pkey->type);
+  if (algid < 0) {
+    OQSerr(0, ERR_R_FATAL);
+    return 0;
+  }
+  if (!oqs || !oqs->sk) {
+    OQSerr(0, ERR_R_FATAL);
+    goto err;
+  }
 
   oqsasn1sk asn1;
-  asn1.algid = OQS_SIG_picnic_default; // FIXMEOQS: don't hardcode, map it from pkey->type
+  asn1.algid = algid;
   asn1.sk = asn1_octet_string_from(oqs->sk, oqs->s->priv_key_len);
   if (!asn1.sk) {
     OQSerr(0, ERR_R_FATAL);
@@ -428,8 +476,8 @@ static int oqs_priv_encode(PKCS8_PRIV_KEY_INFO *p8, const EVP_PKEY *pkey)
     }
 
   params=ASN1_INTEGER_new();
-  ASN1_INTEGER_set(params,NID_oqs_picnic_default);
-  if (!PKCS8_pkey_set0(p8, OBJ_nid2obj(NID_oqs_picnic_default), 0,
+  ASN1_INTEGER_set(params, pkey->type);
+  if (!PKCS8_pkey_set0(p8, OBJ_nid2obj(pkey->type), 0,
 		       V_ASN1_NULL,0, prkey->data, prkey->length))
     {
       OQSerr(0, ERR_R_FATAL);

@@ -123,6 +123,7 @@
 #include <openssl/objects.h>
 #include <openssl/evp.h>
 #include <openssl/x509.h>
+#include <openssl/oqs.h>
 
 /*
  * send s->init_buf in records of type 'type' (SSL3_RT_HANDSHAKE or
@@ -502,7 +503,7 @@ int ssl_cert_type(X509 *x, EVP_PKEY *pkey)
     } else if (i == NID_id_GostR3410_2001 || i == NID_id_GostR3410_2001_cc) {
         ret = SSL_PKEY_GOST01;
 #ifndef OPENSSL_NO_OQS
-    } else if (i == EVP_PKEY_OQS) { // OQS sig
+    } else if (i == NID_oqs_picnic_default /* || other OQS algs... */) { // OQS sig
       ret = SSL_PKEY_OQS;
 #endif
     } else if (x && (i == EVP_PKEY_DH || i == EVP_PKEY_DHX)) {

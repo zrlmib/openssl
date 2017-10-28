@@ -4192,5 +4192,3 @@
 #define LN_jurisdictionCountryName              "jurisdictionCountryName"
 #define NID_jurisdictionCountryName             957
 #define OBJ_jurisdictionCountryName             1L,3L,6L,1L,4L,1L,311L,60L,2L,1L,3L
-/* OQS note: this should be defined in obj_mac.num and objects.txt */
-#define NID_oqs_picnic_default 958
