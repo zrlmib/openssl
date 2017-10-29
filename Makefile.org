@@ -489,7 +489,7 @@ report:
 update: errors stacks util/libeay.num util/ssleay.num TABLE
 	@set -e; target=update; $(RECURSIVE_BUILD_CMD)
 
-depend:
+depend: build_liboqs
 	@set -e; target=depend; $(RECURSIVE_BUILD_CMD)
 
 lint:
