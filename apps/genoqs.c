@@ -94,8 +94,6 @@ int MAIN(int, char **);
 int MAIN(int argc, char **argv)
 {
     int ret = 1;
-    int i;
-    long l;
     const EVP_CIPHER *enc = NULL;
     EVP_PKEY *pkey = NULL;
     EVP_PKEY_CTX *ctx = NULL;
@@ -210,24 +208,25 @@ int MAIN(int argc, char **argv)
         BIO_printf(bio_err, "%ld semi-random bytes loaded\n",
                    app_RAND_load_files(inrand));
 
-    BIO_printf(bio_err, "Generating OQS private key\n");
-    
-    pkey = EVP_PKEY_new();
-    if (pkey == NULL) {
-      BIO_printf(bio_err, "error initializing key\n");
-      goto err;
+    if (do_picnic) {
+      BIO_printf(bio_err, "Generating OQS private key\n");
+      
+      pkey = EVP_PKEY_new();
+      if (pkey == NULL) {
+	BIO_printf(bio_err, "error initializing key\n");
+	goto err;
+      }
+      ctx = EVP_PKEY_CTX_new_id(NID_oqs_picnic_default, NULL);
+      if (ctx == NULL) {
+	BIO_printf(bio_err, "error initializing context\n");
+	goto err;
+      }
+      EVP_PKEY_keygen_init(ctx);
+      if (EVP_PKEY_keygen(ctx,&pkey) <= 0) {
+	BIO_printf(bio_err, "error generating key\n");
+	goto err;
+      }
     }
-    ctx = EVP_PKEY_CTX_new_id(NID_oqs_picnic_default, NULL);
-    if (ctx == NULL) {
-      BIO_printf(bio_err, "error initializing context\n");
-      goto err;
-    }
-    EVP_PKEY_keygen_init(ctx);
-    if (EVP_PKEY_keygen(ctx,&pkey) <= 0) {
-      BIO_printf(bio_err, "error generating key\n");
-      goto err;
-    }
-
     CRYPTO_cleanup_all_ex_data();
 
     app_RAND_write_file(NULL, bio_err);
