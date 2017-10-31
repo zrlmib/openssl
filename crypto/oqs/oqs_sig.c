@@ -298,17 +298,6 @@ static int pkey_oqs_ctrl(EVP_PKEY_CTX *ctx, int type, int p1, void *p2)
 // ASN.1 artifacts
 /////////////////////////////////////////////////////////
 
-/* Define OIDs for OQS artifacts */
-/* Picnic. TODO: add the other Picnic variants.
- *    Note: these OIDs are _NOT_ official and are temp placeholders
- *          1 3 6 1 4 1 311 = Microsoft
- *                       99 = Place holder
- *                        1 = Picnic
- *                        1 = SHA256
- */
-#define PicnicWithSHA256_OID "1 3 6 1 4 1 311 99 1 1"
-#define PicnicWithSHA256_name "PicnicWithSHA256" /* same short and long name */
-
 // Secret key
 typedef struct {
   long algid;
@@ -617,22 +606,37 @@ int oqs_pub_cmp(const EVP_PKEY *a, const EVP_PKEY *b)
 #define DEFINE_OQS_EVP_METHODS(ALG, NID, NAME)    \
   DEFINE_OQS_EVP_PKEY_METHOD(ALG, NID)	          \
   DEFINE_OQS_EVP_PKEY_ASN1_METHOD(ALG, NID, NAME)
-				
+
+/* ============================================================ */
+
+/* New OQS ID registration. Repeat for each new alg */
+
+/* Define OIDs for OQS artifacts */
+/* Picnic. TODO: add the other Picnic variants.
+ *    Note: these OIDs are _NOT_ official and are temp placeholders
+ *          1 3 6 1 4 1 311 = Microsoft
+ *                       99 = Place holder
+ *                        1 = Picnic
+ *                        1 = SHA256
+ */
+#define PicnicWithSHA256_OID "1 3 6 1 4 1 311 99 1 1"
+#define PicnicWithSHA256_name "PicnicWithSHA256" /* same short and long name */
 DEFINE_OQS_EVP_METHODS(picnic, NID_oqs_picnic_default, PicnicWithSHA256_name)
+
+/* ============================================================ */
 
 void OQS_add_all_algorithms()
 {
   // Only initialize once (Not threadsafe FIXMEOQS)
   if (!g_initialized) {
 
-    // add the OQS methods
+    // add the OQS methods (for each sig alg)
     EVP_PKEY_asn1_add0(&oqs_asn1_meth_picnic);
     EVP_PKEY_meth_add0(&oqs_pkey_meth_picnic);
     if (!OBJ_create(PicnicWithSHA256_OID, PicnicWithSHA256_name, PicnicWithSHA256_name)) {
       OQSerr(0, ERR_R_FATAL);
       return;
     }
-
     if(!OBJ_add_sigid(NID_oqs_picnic_default, NID_sha256, NID_oqs_picnic_default /*FIXMEOQS: why the double NID_oqs_picnic_default*/)) {
       OQSerr(0, ERR_R_FATAL);
       return;
