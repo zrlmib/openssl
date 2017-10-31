@@ -75,7 +75,6 @@ int pkey_oqs_init(EVP_PKEY_CTX *ctx)
 }
 
 int pkey_oqs_copy(EVP_PKEY_CTX *dst, EVP_PKEY_CTX *src)
-
 {
   OQS_PKEY_CTX *dctx, *sctx;
   if (!pkey_oqs_init(dst)) {
@@ -367,7 +366,7 @@ static int oqs_pub_encode(X509_PUBKEY *pk, const EVP_PKEY *pkey)
 static int oqs_priv_decode(EVP_PKEY *pkey, PKCS8_PRIV_KEY_INFO *p8)
 {
   int rc;
-  unsigned char *p;
+  const unsigned char *p;
   int plen;
   PKCS8_pkey_get0(NULL, &p, &plen, NULL, p8);
 
@@ -607,6 +606,7 @@ int oqs_pub_cmp(const EVP_PKEY *a, const EVP_PKEY *b)
   DEFINE_OQS_EVP_PKEY_METHOD(ALG, NID)	          \
   DEFINE_OQS_EVP_PKEY_ASN1_METHOD(ALG, NID, NAME)
 
+
 /* ============================================================ */
 
 /* New OQS ID registration. Repeat for each new alg */
@@ -627,17 +627,25 @@ DEFINE_OQS_EVP_METHODS(picnic, NID_oqs_picnic_default, PicnicWithSHA256_name)
 
 void OQS_add_all_algorithms()
 {
-  // Only initialize once (Not threadsafe FIXMEOQS)
+  /* Only initialize once (Not threadsafe FIXMEOQS) */
   if (!g_initialized) {
 
-    // add the OQS methods (for each sig alg)
+    /* TODO: we could use macros for the following code */
+    
+    /* add the OQS methods (for each sig alg)
+     * FIXME: OBJ_create assigns a new NID (by incrementing the NUM_NID value
+     *        (defined in obj_dat.h). We can retrieve it by calling OBJ_txt2nid(NAME)
+     *        We should refactor this registration process to avoid hardcoding the
+     *        values in oqs_sig.h.
+     */
     EVP_PKEY_asn1_add0(&oqs_asn1_meth_picnic);
     EVP_PKEY_meth_add0(&oqs_pkey_meth_picnic);
     if (!OBJ_create(PicnicWithSHA256_OID, PicnicWithSHA256_name, PicnicWithSHA256_name)) {
       OQSerr(0, ERR_R_FATAL);
       return;
     }
-    if(!OBJ_add_sigid(NID_oqs_picnic_default, NID_sha256, NID_oqs_picnic_default /*FIXMEOQS: why the double NID_oqs_picnic_default*/)) {
+    /* FIXMEOQS: should we use different NID for signid and pkey_id (1st & 3rd arg) */
+    if(!OBJ_add_sigid(NID_oqs_picnic_default, NID_sha256, NID_oqs_picnic_default)) {
       OQSerr(0, ERR_R_FATAL);
       return;
     }
