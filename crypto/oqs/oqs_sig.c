@@ -457,7 +457,7 @@ static int oqs_priv_encode(PKCS8_PRIV_KEY_INFO *p8, const EVP_PKEY *pkey)
     OQSerr(0, ERR_R_FATAL);
     goto err;
   }
-  prkey = ASN1_STRING_new(); // FIXMEOQS: leaks! can't free it here otherwise fails later (in apps/genoqs_sig.c)
+  prkey = ASN1_STRING_new(); // FIXMEOQS: leaks! can't free it here otherwise fails later (in apps/genoqs.c)
   prkey->length = i2d_oqsasn1sk(&asn1,&prkey->data);
   if (prkey->length <= 0)
     {
