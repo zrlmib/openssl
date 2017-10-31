@@ -265,7 +265,7 @@ static int pkey_oqs_ctrl(EVP_PKEY_CTX *ctx, int type, int p1, void *p2)
 #define DEFINE_OQS_EVP_PKEY_METHOD(ALG, NID_ALG) \
   static EVP_PKEY_METHOD oqs_pkey_meth_##ALG =	 \
     {						 \
-      NID_oqs_picnic_default,			 \
+      NID_ALG,					 \
       EVP_PKEY_FLAG_AUTOARGLEN,			 \
       pkey_oqs_init,				 \
       pkey_oqs_copy,				 \
