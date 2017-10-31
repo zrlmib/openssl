@@ -84,7 +84,7 @@
 # include <openssl/pem.h>
 # include <openssl/rand.h>
 
-#include <openssl/oqs.h>
+#include <openssl/oqs_sig.h>
 
 # undef PROG
 # define PROG genoqs_main
@@ -223,7 +223,7 @@ int MAIN(int argc, char **argv)
       goto err;
     }
     EVP_PKEY_keygen_init(ctx);
-    if (EVP_PKEY_keygen(ctx,&pkey) <= 0){
+    if (EVP_PKEY_keygen(ctx,&pkey) <= 0) {
       BIO_printf(bio_err, "error generating key\n");
       goto err;
     }

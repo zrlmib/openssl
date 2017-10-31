@@ -513,7 +513,7 @@ genoqs.o: ../include/openssl/evp.h ../include/openssl/hmac.h
 genoqs.o: ../include/openssl/kssl.h ../include/openssl/lhash.h
 genoqs.o: ../include/openssl/obj_mac.h ../include/openssl/objects.h
 genoqs.o: ../include/openssl/ocsp.h ../include/openssl/opensslconf.h
-genoqs.o: ../include/openssl/opensslv.h ../include/openssl/oqs.h
+genoqs.o: ../include/openssl/opensslv.h ../include/openssl/oqs_sig.h
 genoqs.o: ../include/openssl/ossl_typ.h ../include/openssl/pem.h
 genoqs.o: ../include/openssl/pem2.h ../include/openssl/pkcs7.h
 genoqs.o: ../include/openssl/pqueue.h ../include/openssl/rand.h

@@ -12,19 +12,16 @@
 #include <oqs/rand.h>
 #include <oqs/common.h>
 #include <oqs/sig.h>
-#include "oqs.h"
+#include "oqs_sig.h"
 
 /* 
- * FIXMEOQS
  * OQS note: the content of this file should be distributed in the OpenSSL
  * code base to avoid a manual registration of the OQS algs, but this makes
  * it simple to develop and test. 
  *
- * Error codes should be reviewed and functions defined for the OQSerr macro. 
+ * Each OQS signature alg have its own NID, defined in oqs_sig.h.
  *
- * The code needs to be generalized to support more than one sig alg.
- * TODO: can be done by having _one_ NID_oqs id and only use the OQS_SIG_... ones
- * in the OQS_PKEY_CTX struct.
+ * Error codes should be reviewed and functions defined for the OQSerr macro. 
  */
 
 static int g_initialized = 0;
@@ -49,11 +46,11 @@ int get_oqs_alg_id(int openssl_nid)
   switch (openssl_nid)
     {
     case NID_oqs_picnic_default:
-      return OQS_SIG_picnic_default; 
+      return OQS_SIG_picnic_default;
+      /* add more OQS alg here... */
     default:
       return -1;
     }
-
 }
 
 int OQS_up_ref(OQS_PKEY_CTX *key)
@@ -265,35 +262,36 @@ static int pkey_oqs_ctrl(EVP_PKEY_CTX *ctx, int type, int p1, void *p2)
 }
 
 // The EVP OQS methods; 0s are unused
-static EVP_PKEY_METHOD oqs_pkey_meth =
-    {
-      NID_oqs_picnic_default,
-      EVP_PKEY_FLAG_AUTOARGLEN,
-      pkey_oqs_init,
-      pkey_oqs_copy,
-      pkey_oqs_cleanup,
-      0, // paramgen_init
-      0, //paramgen
-      pkey_oqs_keygen_init,
-      pkey_oqs_keygen,
-      pkey_oqs_sign_init,
-      pkey_oqs_sign,
-      0, //verify_init
-      pkey_oqs_verify,
-      0, //verify_recover_init
-      0, //verify_recover
-      0, //signctx_init
-      0, //signctx
-      0, //verifyctx_init
-      0, //verifyctx
-      0, //encrypt_init
-      0, //encrypt
-      0, //decrypt_init
-      0, //decrypt
-      0, //derive_init
-      0, //derive
-      pkey_oqs_ctrl,
-      0 // pkey_oqs_ctrl_str
+#define DEFINE_OQS_EVP_PKEY_METHOD(ALG, NID_ALG) \
+  static EVP_PKEY_METHOD oqs_pkey_meth_##ALG =	 \
+    {						 \
+      NID_oqs_picnic_default,			 \
+      EVP_PKEY_FLAG_AUTOARGLEN,			 \
+      pkey_oqs_init,				 \
+      pkey_oqs_copy,				 \
+      pkey_oqs_cleanup,				 \
+      0, /* paramgen_init */			 \
+      0, /* paramgen */				 \
+      pkey_oqs_keygen_init,			 \
+      pkey_oqs_keygen,				 \
+      pkey_oqs_sign_init,			 \
+      pkey_oqs_sign,				 \
+      0, /* verify_init */			 \
+      pkey_oqs_verify,				 \
+      0, /* verify_recover_init */		 \
+      0, /* verify_recover */			 \
+      0, /* signctx_init */			 \
+      0, /* signctx */				 \
+      0, /* verifyctx_init */			 \
+      0, /* verifyctx */			 \
+      0, /* encrypt_init */			 \
+      0, /* encrypt */				 \
+      0, /* decrypt_init */			 \
+      0, /* decrypt */				 \
+      0, /* derive_init */			 \
+      0, /* derive */				 \
+      pkey_oqs_ctrl,				 \
+      0 /* pkey_oqs_ctrl_str */			 \
     };
 
 /////////////////////////////////////////////////////////
@@ -355,11 +353,11 @@ static int oqs_pub_encode(X509_PUBKEY *pk, const EVP_PKEY *pkey)
   int ptype = V_ASN1_UNDEF;
   ASN1_STRING *penc = ASN1_STRING_new(); // FIXMEOQS: leaks! can't free it otherwise fails later
   int algid = get_oqs_alg_id(pkey->type);
-  if (!oqs->pk) {
+  if (algid < 0) {
     OQSerr(0, ERR_R_FATAL);
     return 0;
   }
-  if (algid < 0) {
+  if (!oqs->pk) {
     OQSerr(0, ERR_R_FATAL);
     return 0;
   }
@@ -380,7 +378,7 @@ static int oqs_pub_encode(X509_PUBKEY *pk, const EVP_PKEY *pkey)
 static int oqs_priv_decode(EVP_PKEY *pkey, PKCS8_PRIV_KEY_INFO *p8)
 {
   int rc;
-  const unsigned char *p=NULL;
+  unsigned char *p;
   int plen;
   PKCS8_pkey_get0(NULL, &p, &plen, NULL, p8);
 
@@ -394,12 +392,17 @@ static int oqs_priv_decode(EVP_PKEY *pkey, PKCS8_PRIV_KEY_INFO *p8)
   d2i_oqsasn1sk(&asn1,(const unsigned char**)&p, plen);
 
   OQS_PKEY_CTX *oqs_ctx = (OQS_PKEY_CTX*) OPENSSL_malloc(sizeof(OQS_PKEY_CTX)); // FIXMEOQS: leaks
-  oqs_pkey_ctx_init(oqs_ctx, asn1->algid);
+  if (!oqs_pkey_ctx_init(oqs_ctx, asn1->algid)) {
+    OQSerr(0, ERR_R_FATAL);
+    return 0;
+  }
   memcpy(oqs_ctx->sk, asn1->sk->data, oqs_ctx->s->priv_key_len); // FIXMEOQS: should the len come from the asn1 struct
   memcpy(oqs_ctx->pk, asn1->pk->data, oqs_ctx->s->pub_key_len);
   if (EVP_PKEY_assign(pkey, pkey->type, oqs_ctx)) {
     OQS_up_ref(oqs_ctx);
+    rc = 1;
   } else {
+    OQSerr(0, ERR_R_FATAL);
     return 0;
   }
 
@@ -443,13 +446,12 @@ static int oqs_priv_encode(PKCS8_PRIV_KEY_INFO *p8, const EVP_PKEY *pkey)
   int rc;
   ASN1_INTEGER *params = NULL;
   ASN1_STRING *prkey  = NULL;
-
-  OQS_PKEY_CTX *oqs = (OQS_PKEY_CTX*)pkey->pkey.ptr;
   int algid = get_oqs_alg_id(pkey->type);
   if (algid < 0) {
     OQSerr(0, ERR_R_FATAL);
     return 0;
   }
+  OQS_PKEY_CTX *oqs = (OQS_PKEY_CTX*)pkey->pkey.ptr;
   if (!oqs || !oqs->sk) {
     OQSerr(0, ERR_R_FATAL);
     goto err;
@@ -467,7 +469,7 @@ static int oqs_priv_encode(PKCS8_PRIV_KEY_INFO *p8, const EVP_PKEY *pkey)
     OQSerr(0, ERR_R_FATAL);
     goto err;
   }
-  prkey = ASN1_STRING_new(); // FIXMEOQS: leaks! can't free it here otherwise fails later (in apps/genoqs.c)
+  prkey = ASN1_STRING_new(); // FIXMEOQS: leaks! can't free it here otherwise fails later (in apps/genoqs_sig.c)
   prkey->length = i2d_oqsasn1sk(&asn1,&prkey->data);
   if (prkey->length <= 0)
     {
@@ -578,38 +580,45 @@ int oqs_pub_cmp(const EVP_PKEY *a, const EVP_PKEY *b)
 }
 
 // The EVP ASN1 OQS methods; 0s are unused
-static EVP_PKEY_ASN1_METHOD oqs_asn1_meth =
-  {
-      NID_oqs_picnic_default, // pkey_id
-      NID_oqs_picnic_default, // pkey_base_id
-      0, // pkey_flags
-      PicnicWithSHA256_name, // pem_str
-      "OpenSSL OQS method", // info
-      oqs_pub_decode, // pub_decode
-      oqs_pub_encode, // pub_encode
-      oqs_pub_cmp, // pub_cmp
-      oqs_pub_print, // pub_print
-      oqs_priv_decode, // priv_decode
-      oqs_priv_encode, // priv_encode
-      0, // priv_print
-      oqs_pkey_size, // pkey_size
-      0, // pkey_bits
-      0, // param_decode
-      0, // param_encode
-      0, // param_missing
-      0, // param_copy
-      0, // param_cmp
-      0, // param_print
-      oqs_sig_print, // sig_print
-      oqs_pkey_free, // pkey_free
-      0, // pkey_ctrl
-      /* Legacy functions for old PEM */
-      0, // old_priv_decode
-      0, // old_priv_encode
-      /* Custom ASN1 signature verification */
-      0, // item_verify
-      0 // item_sign
-  };
+#define DEFINE_OQS_EVP_PKEY_ASN1_METHOD(ALG, NID_ALG, NAME_ALG)	\
+  static EVP_PKEY_ASN1_METHOD oqs_asn1_meth_##ALG =		\
+    {								\
+      NID_ALG, /* pkey_id */					\
+      NID_ALG, /* pkey_base_id */				\
+      0, /* pkey_flags */					\
+      NAME_ALG, /* pem_str */					\
+      NAME_ALG, /* info */					\
+      oqs_pub_decode, /* pub_decode */				\
+      oqs_pub_encode, /* pub_encode */				\
+      oqs_pub_cmp, /* pub_cmp */				\
+      oqs_pub_print, /* pub_print */				\
+      oqs_priv_decode, /* priv_decode */			\
+      oqs_priv_encode, /* priv_encode */			\
+      0, /* priv_print */					\
+      oqs_pkey_size, /* pkey_size */				\
+      0, /* pkey_bits */					\
+      0, /* param_decode */					\
+      0, /* param_encode */					\
+      0, /* param_missing */					\
+      0, /* param_copy */					\
+      0, /* param_cmp */					\
+      0, /* param_print */					\
+      oqs_sig_print, /* sig_print */				\
+      oqs_pkey_free, /* pkey_free */				\
+      0, /* pkey_ctrl */					\
+      /* Legacy functions for old PEM */			\
+      0, /* old_priv_decode */					\
+      0, /* old_priv_encode */					\
+      /* Custom ASN1 signature verification */			\
+      0, /* item_verify */					\
+      0 /* item_sign */						\
+    };
+
+#define DEFINE_OQS_EVP_METHODS(ALG, NID, NAME)    \
+  DEFINE_OQS_EVP_PKEY_METHOD(ALG, NID)	          \
+  DEFINE_OQS_EVP_PKEY_ASN1_METHOD(ALG, NID, NAME)
+				
+DEFINE_OQS_EVP_METHODS(picnic, NID_oqs_picnic_default, PicnicWithSHA256_name)
 
 void OQS_add_all_algorithms()
 {
@@ -617,8 +626,8 @@ void OQS_add_all_algorithms()
   if (!g_initialized) {
 
     // add the OQS methods
-    EVP_PKEY_asn1_add0(&oqs_asn1_meth);
-    EVP_PKEY_meth_add0(&oqs_pkey_meth);
+    EVP_PKEY_asn1_add0(&oqs_asn1_meth_picnic);
+    EVP_PKEY_meth_add0(&oqs_pkey_meth_picnic);
     if (!OBJ_create(PicnicWithSHA256_OID, PicnicWithSHA256_name, PicnicWithSHA256_name)) {
       OQSerr(0, ERR_R_FATAL);
       return;

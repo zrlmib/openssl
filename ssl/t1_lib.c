@@ -120,7 +120,7 @@
 #endif
 #include <openssl/ocsp.h>
 #include <openssl/rand.h>
-#include <openssl/oqs.h>
+#include <openssl/oqs_sig.h>
 #include "ssl_locl.h"
 
 const char tls1_version_str[] = "TLSv1" OPENSSL_VERSION_PTEXT;

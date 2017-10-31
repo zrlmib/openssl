@@ -123,7 +123,7 @@
 #include <openssl/objects.h>
 #include <openssl/evp.h>
 #include <openssl/x509.h>
-#include <openssl/oqs.h>
+#include <openssl/oqs_sig.h>
 
 /*
  * send s->init_buf in records of type 'type' (SSL3_RT_HANDSHAKE or
