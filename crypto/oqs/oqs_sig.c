@@ -339,7 +339,9 @@ static int oqs_pub_encode(X509_PUBKEY *pk, const EVP_PKEY *pkey)
   OQS_PKEY_CTX *oqs = (OQS_PKEY_CTX*) pkey->pkey.ptr;
   void *pval = NULL;
   int ptype = V_ASN1_UNDEF;
-  ASN1_STRING *penc = ASN1_STRING_new(); // FIXMEOQS: leaks! can't free it otherwise fails later
+  unsigned char* key_data = NULL;
+  int key_length = 0;
+
   int algid = get_oqs_alg_id(pkey->type);
   if (algid < 0) {
     OQSerr(0, ERR_R_FATAL);
@@ -358,9 +360,9 @@ static int oqs_pub_encode(X509_PUBKEY *pk, const EVP_PKEY *pkey)
   }
   // i2d_TYPE converts an ASN.1 object in an internal standardized form
   // to its DER encoding and stuffs it into a character string
-  penc->length = i2d_oqsasn1pk(&asn1,&penc->data);
+  key_length = i2d_oqsasn1pk(&asn1,&key_data);
   return X509_PUBKEY_set0_param(pk, OBJ_nid2obj(pkey->type),
-				ptype, pval, penc->data, penc->length);
+				ptype, pval, key_data, key_length);
 }
 
 static int oqs_priv_decode(EVP_PKEY *pkey, PKCS8_PRIV_KEY_INFO *p8)
@@ -433,7 +435,9 @@ static int oqs_priv_encode(PKCS8_PRIV_KEY_INFO *p8, const EVP_PKEY *pkey)
 {
   int rc;
   ASN1_INTEGER *params = NULL;
-  ASN1_STRING *prkey  = NULL;
+  unsigned char* key_data = NULL;
+  int key_length = 0;
+  
   int algid = get_oqs_alg_id(pkey->type);
   if (algid < 0) {
     OQSerr(0, ERR_R_FATAL);
@@ -457,9 +461,8 @@ static int oqs_priv_encode(PKCS8_PRIV_KEY_INFO *p8, const EVP_PKEY *pkey)
     OQSerr(0, ERR_R_FATAL);
     goto err;
   }
-  prkey = ASN1_STRING_new(); // FIXMEOQS: leaks! can't free it here otherwise fails later (in apps/genoqs.c)
-  prkey->length = i2d_oqsasn1sk(&asn1,&prkey->data);
-  if (prkey->length <= 0)
+  key_length = i2d_oqsasn1sk(&asn1, &key_data);
+  if (key_length <= 0)
     {
       OQSerr(0, ERR_R_FATAL);
       goto err;
@@ -468,7 +471,7 @@ static int oqs_priv_encode(PKCS8_PRIV_KEY_INFO *p8, const EVP_PKEY *pkey)
   params=ASN1_INTEGER_new();
   ASN1_INTEGER_set(params, pkey->type);
   if (!PKCS8_pkey_set0(p8, OBJ_nid2obj(pkey->type), 0,
-		       V_ASN1_NULL,0, prkey->data, prkey->length))
+		       V_ASN1_NULL,0, key_data, key_length))
     {
       OQSerr(0, ERR_R_FATAL);
       goto err;
