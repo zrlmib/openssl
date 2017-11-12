@@ -1869,7 +1869,10 @@ int ssl3_get_key_exchange(SSL *s)
 	   * as having a max length of 2^16-1, but we increase the size
 	   * for experimenation.
 	   */
-	  use_large_sig = 1;
+	  //	  use_large_sig = 1; FIXMEOQS: default Picnic is now small enough
+	  //                         and doesn't need the extra space. The other params
+	  //                         need the extra space, so maybe I'll need to define
+	  //                         another SSL_aOQSPICNIC.
 	  pkey=X509_get_pubkey(s->session->sess_cert->peer_pkeys[SSL_PKEY_OQS].x509);
 	}
 #endif

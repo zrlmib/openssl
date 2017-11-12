@@ -2021,7 +2021,10 @@ int ssl3_send_server_key_exchange(SSL *s)
 	       * as having a max length of 2^16-1, but we increase the size
 	       * for experimenation.
 	       */
-	      siglen_len = 4;
+	      // siglen_len = 4; FIXMEOQS: default Picnic is now small enough
+	      //                 and doesn't need the extra space. The other params
+	      //                 need the extra space, so maybe I'll need to define
+	      //                 another SSL_aOQSPICNIC.
 	    }
             if ((pkey = ssl_get_sign_pkey(s, s->s3->tmp.new_cipher, &md))
                 == NULL) {
