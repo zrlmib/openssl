@@ -57,8 +57,7 @@
  */
 
 /* FIXMEOQS: 
- *   - this be moved to genpkey
- *   - oqs_priv_encode leaks and I'm not sure how to fix it.
+ *   - this file should be merged with genpkey
  */
 
 #include <openssl/opensslconf.h>
@@ -249,7 +248,8 @@ int MAIN(int argc, char **argv)
       EVP_PKEY_free(pkey);
     }
     if (ctx) {
-      EVP_PKEY_CTX_free(ctx);
+	// the ctx's data has already been freed as part of EVP_PKEY_free, so we free the extra ctx object
+	OPENSSL_free(ctx);
     }
     if (out)
         BIO_free_all(out);

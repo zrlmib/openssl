@@ -96,7 +96,7 @@ void pkey_oqs_cleanup(EVP_PKEY_CTX *ctx)
 {
   OQS_PKEY_CTX *oqs = ctx->data;
   if (oqs) {
-    OPENSSL_free(oqs);
+    oqs_pkey_ctx_free(oqs);
   }
 }
 
@@ -193,10 +193,13 @@ void oqs_pkey_ctx_free(OQS_PKEY_CTX* ctx) {
   if (ctx == NULL) {
     return;
   }
-  if (ctx->s->rand) { OQS_RAND_free(ctx->s->rand); }
-  if (ctx->s) { OQS_SIG_free(ctx->s); }
+  if (ctx->s) {
+    if (ctx->s->rand) { OQS_RAND_free(ctx->s->rand); }
+    OQS_SIG_free(ctx->s);
+  }
   if (ctx->sk) { OPENSSL_free(ctx->sk); }
   if (ctx->pk) { OPENSSL_free(ctx->pk); }
+  OPENSSL_free(ctx);
   return;
 }
 
@@ -361,6 +364,7 @@ static int oqs_pub_encode(X509_PUBKEY *pk, const EVP_PKEY *pkey)
   // i2d_TYPE converts an ASN.1 object in an internal standardized form
   // to its DER encoding and stuffs it into a character string
   key_length = i2d_oqsasn1pk(&asn1,&key_data);
+  if (asn1.pk) { ASN1_OCTET_STRING_free(asn1.pk); }
   return X509_PUBKEY_set0_param(pk, OBJ_nid2obj(pkey->type),
 				ptype, pval, key_data, key_length);
 }
@@ -381,7 +385,7 @@ static int oqs_priv_decode(EVP_PKEY *pkey, PKCS8_PRIV_KEY_INFO *p8)
   // internal standardized form. 
   d2i_oqsasn1sk(&asn1,(const unsigned char**)&p, plen);
 
-  OQS_PKEY_CTX *oqs_ctx = (OQS_PKEY_CTX*) OPENSSL_malloc(sizeof(OQS_PKEY_CTX)); // FIXMEOQS: leaks
+  OQS_PKEY_CTX *oqs_ctx = (OQS_PKEY_CTX*) OPENSSL_malloc(sizeof(OQS_PKEY_CTX));
   if (!oqs_pkey_ctx_init(oqs_ctx, asn1->algid)) {
     OQSerr(0, ERR_R_FATAL);
     return 0;
@@ -415,13 +419,14 @@ static int oqs_pub_decode(EVP_PKEY *pkey, X509_PUBKEY *pubkey)
       return 0;
     }
 
-  oqsasn1pk a;
+  oqsasn1pk a; // FIXMEOQS: why both 'a' and 'asn1'
   oqsasn1pk *asn1=&a;
   a.pk = ASN1_OCTET_STRING_new();
   d2i_oqsasn1pk(&asn1,(const unsigned char **)&p, pklen);
-  OQS_PKEY_CTX *oqs_ctx = OPENSSL_malloc(sizeof(OQS_PKEY_CTX)); // FIXMEOQS: leaks
+  OQS_PKEY_CTX *oqs_ctx = OPENSSL_malloc(sizeof(OQS_PKEY_CTX));
   oqs_pkey_ctx_init(oqs_ctx, asn1->algid);
   memcpy(oqs_ctx->pk, asn1->pk->data, oqs_ctx->s->pub_key_len);
+  ASN1_OCTET_STRING_free(a.pk);
   if (EVP_PKEY_assign(pkey, pkey->type, oqs_ctx)) {
     OQS_up_ref(oqs_ctx);
   } else {
@@ -503,8 +508,10 @@ static int oqs_pkey_size(const EVP_PKEY *pkey)
 static void oqs_pkey_free(EVP_PKEY *pkey)
 {
   if (pkey == NULL) return;
+  // free the OQS ctx
   OQS_PKEY_CTX *oqs = (OQS_PKEY_CTX*)pkey->pkey.ptr;
   oqs_pkey_ctx_free(oqs);
+  pkey->pkey.ptr = NULL;
   return;
 }
 
