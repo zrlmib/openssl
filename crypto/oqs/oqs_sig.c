@@ -390,7 +390,13 @@ static int oqs_priv_decode(EVP_PKEY *pkey, PKCS8_PRIV_KEY_INFO *p8)
     OQSerr(0, ERR_R_FATAL);
     return 0;
   }
-  memcpy(oqs_ctx->sk, asn1->sk->data, oqs_ctx->s->priv_key_len); // FIXMEOQS: should the len come from the asn1 struct
+  // make sure the asn1 values are of the right size
+  if (asn1->sk->length != oqs_ctx->s->priv_key_len ||
+      asn1->pk->length != oqs_ctx->s->pub_key_len) {
+    OQSerr(0, ERR_R_FATAL);
+    return 0;    
+  }
+  memcpy(oqs_ctx->sk, asn1->sk->data, oqs_ctx->s->priv_key_len);
   memcpy(oqs_ctx->pk, asn1->pk->data, oqs_ctx->s->pub_key_len);
   if (EVP_PKEY_assign(pkey, pkey->type, oqs_ctx)) {
     OQS_up_ref(oqs_ctx);
@@ -419,12 +425,20 @@ static int oqs_pub_decode(EVP_PKEY *pkey, X509_PUBKEY *pubkey)
       return 0;
     }
 
-  oqsasn1pk a; // FIXMEOQS: why both 'a' and 'asn1'
+  oqsasn1pk a;
   oqsasn1pk *asn1=&a;
   a.pk = ASN1_OCTET_STRING_new();
   d2i_oqsasn1pk(&asn1,(const unsigned char **)&p, pklen);
   OQS_PKEY_CTX *oqs_ctx = OPENSSL_malloc(sizeof(OQS_PKEY_CTX));
-  oqs_pkey_ctx_init(oqs_ctx, asn1->algid);
+  if (!oqs_pkey_ctx_init(oqs_ctx, asn1->algid)) {
+    OQSerr(0, ERR_R_FATAL);
+    return 0;
+  }
+  // make sure the asn1 values are of the right size
+  if (asn1->pk->length != oqs_ctx->s->pub_key_len) {
+    OQSerr(0, ERR_R_FATAL);
+    return 0;    
+  }
   memcpy(oqs_ctx->pk, asn1->pk->data, oqs_ctx->s->pub_key_len);
   ASN1_OCTET_STRING_free(a.pk);
   if (EVP_PKEY_assign(pkey, pkey->type, oqs_ctx)) {
