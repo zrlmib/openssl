@@ -23,7 +23,7 @@ LIBOBJ=	oqs_sig.o
 
 SRC= $(LIBSRC)
 
-EXHEADER= oqs_sig.c
+EXHEADER= oqs_sig.h
 HEADER=	$(EXHEADER)
 
 ALL=    $(GENERAL) $(SRC) $(HEADER)
@@ -96,4 +96,4 @@ oqs_sig.o: ../../include/openssl/ssl3.h ../../include/openssl/stack.h
 oqs_sig.o: ../../include/openssl/symhacks.h ../../include/openssl/tls1.h
 oqs_sig.o: ../../include/openssl/x509.h ../../include/openssl/x509_vfy.h
 oqs_sig.o: ../../include/oqs/common.h ../../include/oqs/kex.h
-oqs_sig.o: ../../include/oqs/rand.h ../../include/oqs/sig.h oqs_sig.c oqs_sig.h
+oqs_sig.o: ../../include/oqs/rand.h ../../include/oqs/sig.h oqs_sig.h
