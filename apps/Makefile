@@ -24,9 +24,9 @@ CFLAGS= -DMONOLITH $(INCLUDES) $(CFLAG)
 
 GENERAL=Makefile makeapps.com install.com
 
-DLIBCRYPTO=../libcrypto.a ../vendor/liboqs/liboqs.a ../vendor/liboqs/src/sig_picnic/external/build/libpicnic.a
+DLIBCRYPTO=../libcrypto.a ../vendor/liboqs/liboqs.a
 DLIBSSL=../libssl.a
-LIBCRYPTO=-L.. -lcrypto -L../vendor/liboqs -loqs -L../vendor/liboqs/src/sig_picnic/external/build -lpicnic
+LIBCRYPTO=-L.. -lcrypto -L../vendor/liboqs -loqs
 LIBSSL=-L.. -lssl
 
 PROGRAM= openssl
