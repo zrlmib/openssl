@@ -13,6 +13,7 @@ wget https://github.com/IAIK/Picnic/archive/master.zip
 unzip master
 rm master.zip
 mv Picnic-master/ external
+./build_picnic.sh
 cd ../..
 autoreconf -i
 ./configure
