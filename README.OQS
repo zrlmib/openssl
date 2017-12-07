@@ -21,15 +21,15 @@ To generate a Picnic cert:
 ./apps/openssl req -new -x509 -days 365 -sha512 -key picnic.key -out picnic.crt -subj "/C=US/L=Redmond/CN=OQStest" -config openssl.cnf
 
 To test a complete (kex+auth) PQS TLS connection, start a server:
-./apps/openssl s_server -cipher RLWEMSRLN16-PICNIC-AES256-GCM-SHA384 -cert picnic.crt -key picnic.key -HTTP
+./apps/openssl s_server -cipher OQSKEX-RLWE-MSRLN16-PICNIC-AES256-GCM-SHA384 -cert picnic.crt -key picnic.key -HTTP
 
 And connect to it with a client
-./apps/openssl s_client -cipher RLWEMSRLN16-PICNIC-AES256-GCM-SHA384 -connect localhost:4433
+./apps/openssl s_client -cipher OQSKEX-RLWE-MSRLN16-PICNIC-AES256-GCM-SHA384 -connect localhost:4433
 
 The following cipher suites are supported:
- * LWEFRODO-PICNIC-AES256-GCM-SHA384
- * RLWEMSRLN16-PICNIC-AES256-GCM-SHA384
- * SIDHCLN16-PICNIC-AES256-GCM-SHA384
+ * OQSKEX-LWE-FRODO-RECOMMENDED-PICNIC-AES256-GCM-SHA384
+ * OQSKEX-RLWE-MSRLN16-PICNIC-AES256-GCM-SHA384
+ * OQSKEX-SIDH-CLN16-PICNIC-AES256-GCM-SHA384
 
 
 Acknowledgement
