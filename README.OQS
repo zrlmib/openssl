@@ -18,7 +18,7 @@ To generate a Picnic key (using a new openssl app genoqs):
 ./apps/openssl genoqs -picnic -out picnic.key
 
 To generate a Picnic cert:
-./apps/openssl req -new -x509 -days 365 -sha256 -key picnic.key -out picnic.crt -subj "/C=US/L=Redmond/CN=OQStest" -config openssl.cnf
+./apps/openssl req -new -x509 -days 365 -sha512 -key picnic.key -out picnic.crt -subj "/C=US/L=Redmond/CN=OQStest" -config openssl.cnf
 
 To test a complete (kex+auth) PQS TLS connection, start a server:
 ./apps/openssl s_server -cipher RLWEMSRLN16-PICNIC-AES256-GCM-SHA384 -cert picnic.crt -key picnic.key -HTTP

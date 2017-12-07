@@ -636,16 +636,10 @@ int oqs_pub_cmp(const EVP_PKEY *a, const EVP_PKEY *b)
 /* New OQS ID registration. Repeat for each new alg */
 
 /* Define OIDs for OQS artifacts */
-/* Picnic. TODO: add the other Picnic variants.
- *    Note: these OIDs are _NOT_ official and are temp placeholders
- *          1 3 6 1 4 1 311 = Microsoft
- *                       99 = Place holder
- *                        1 = Picnic
- *                        1 = SHA256
- */
-#define PicnicWithSHA256_OID "1 3 6 1 4 1 311 99 1 1"
-#define PicnicWithSHA256_name "PicnicWithSHA256" /* same short and long name */
-DEFINE_OQS_EVP_METHODS(picnic, NID_oqs_picnic_default, PicnicWithSHA256_name)
+/* Picnic. TODO: add the other Picnic variants.  */
+#define PicnicL1FS_With_SHA512_OID "1 3 6 1 4 1 311 89 2 1 7"
+#define PicnicL1FS_With_SHA512_name "PicnicL1FS_With_SHA512" /* same short and long name */
+DEFINE_OQS_EVP_METHODS(picnic, NID_oqs_picnic_default, PicnicL1FS_With_SHA512_name)
 
 /* ============================================================ */
 
@@ -664,12 +658,12 @@ void OQS_add_all_algorithms()
      */
     EVP_PKEY_asn1_add0(&oqs_asn1_meth_picnic);
     EVP_PKEY_meth_add0(&oqs_pkey_meth_picnic);
-    if (!OBJ_create(PicnicWithSHA256_OID, PicnicWithSHA256_name, PicnicWithSHA256_name)) {
+    if (!OBJ_create(PicnicL1FS_With_SHA512_OID, PicnicL1FS_With_SHA512_name, PicnicL1FS_With_SHA512_name)) {
       OQSerr(0, ERR_R_FATAL);
       return;
     }
     /* FIXMEOQS: should we use different NID for signid and pkey_id (1st & 3rd arg) */
-    if(!OBJ_add_sigid(NID_oqs_picnic_default, NID_sha256, NID_oqs_picnic_default)) {
+    if(!OBJ_add_sigid(NID_oqs_picnic_default, NID_sha512, NID_oqs_picnic_default)) {
       OQSerr(0, ERR_R_FATAL);
       return;
     }
