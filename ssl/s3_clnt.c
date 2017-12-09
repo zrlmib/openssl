@@ -1840,6 +1840,7 @@ int ssl3_get_key_exchange(SSL *s)
 
 #ifndef OPENSSL_NO_OQSKEX
     else if (((alg_k & SSL_kOQSKEX_GENERIC) || (alg_k & SSL_kOQSKEX_RLWE_BCNS15) || (alg_k & SSL_kOQSKEX_RLWE_NEWHOPE) || (alg_k & SSL_kOQSKEX_RLWE_MSRLN16) || (alg_k & SSL_kOQSKEX_LWE_FRODO_RECOMMENDED) || (alg_k & SSL_kOQSKEX_SIDH_CLN16)) && !(alg_k & SSL_kEECDH)) {
+      /* FIXMEOQS: we should refactor this code together with the hybrid mode below... why duplicate it? */
         /* Get the OQSKEX message */
         srvr_oqskex_msg_len = (p[0] << 8) | p[1];
         p += 2;
@@ -2024,6 +2025,21 @@ int ssl3_get_key_exchange(SSL *s)
                 X509_get_pubkey(s->session->
                                 sess_cert->peer_pkeys[SSL_PKEY_ECC].x509);
 # endif
+#ifndef OPENSSL_NO_OQS
+        else if (alg_a & SSL_aOQSPICNIC) {
+	  /* OQS note: Picnic needs 4 bytes to encode the sig len. Setting
+	   * use_large_sig to 1 will reserve enough space to encode the sig.
+	   * This breaks TLS1.2 which defines a DigitallySigned struct
+	   * as having a max length of 2^16-1, but we increase the size
+	   * for experimenation.
+	   */
+	  //	  use_large_sig = 1; FIXMEOQS: default Picnic is now small enough
+	  //                         and doesn't need the extra space. The other params
+	  //                         need the extra space, so maybe I'll need to define
+	  //                         another SSL_aOQSPICNIC.
+	  pkey=X509_get_pubkey(s->session->sess_cert->peer_pkeys[SSL_PKEY_OQS].x509);
+	}
+#endif
         /* else anonymous ECDH, so no certificate or pkey. */
         EC_KEY_set_public_key(ecdh, srvr_ecpoint);
         s->session->sess_cert->peer_ecdh_tmp = ecdh;
