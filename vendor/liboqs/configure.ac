@@ -99,10 +99,6 @@ ARG_ENABL_SET([kex-code-mcbits], [enable KEX-CODE-MCBITS.])
 AM_CONDITIONAL([kex_code_mcbits], [test "x$kex_code_mcbits" = xtrue])
 AM_CONDITIONAL([USE_MCBITS], [test "x$kex_code_mcbits" = xtrue])
 
-ARG_ENABL_SET([picnic], [enable PICNIC.])
-AM_CONDITIONAL([picnic], [test "x$picnic" = xtrue])
-AM_CONDITIONAL([USE_PICNIC], [test "x$picnic" = xtrue])
-
 ARG_ENABL_SET([kex-sidh-iqc-ref], [enable KEX-SIDH-IQC-REF.])
 AM_CONDITIONAL([kex_sidh_iqc_ref], [test "x$kex_sidh_iqc_ref" = xtrue])
 AM_CONDITIONAL([USE_SIDH_IQC], [test "x$kex_sidh_iqc_ref" = xtrue])
@@ -138,19 +134,40 @@ AC_CANONICAL_HOST
 # specifically based on the host
 case $host_os in
   darwin* )
-        AM_CONDITIONAL([ON_DARWIN], [test xtrue = xtrue])
+        darwin=true
+        ;;
+  linux-android*)
+        AM_CFLAGS=${AM_CFLAGS}" -pie "
+        linux=true
         ;;
   linux*)
-        if test x"${ac_cv_sizeof_size_t}" = x"8";then
-          AM_CPPFLAGS=${AM_CPPFLAGS}" -DSIDH_ASM -march=x86-64 -D__LINUX__"
-        fi
-        AM_CONDITIONAL([ON_DARWIN], [test xtrue = xfalse])
+        linux=true
         ;;
     *)
         #Default Case
         AC_MSG_ERROR([Your platform is not currently supported])
         ;;
 esac
+
+AM_CONDITIONAL([ON_DARWIN], [test "x$darwin" = xtrue])
+
+# Enable assembly optimizations here
+# Appearenly asm optimizations do not work well with darwin
+if test x"$linux" = x"true"; then
+  case $host_cpu in
+    x86_64* )
+        AM_CPPFLAGS=${AM_CPPFLAGS}" -DSIDH_ASM -march=x86-64"
+        x86_64=true
+        ;;
+    aarch64* )
+        AM_CPPFLAGS=${AM_CPPFLAGS}" -DSIDH_ASM -march=armv8-a+crc"
+        arm64=true
+        ;;
+  esac
+fi
+
+AM_CONDITIONAL([X86_64], [test "x$x86_64" = xtrue])
+AM_CONDITIONAL([ARM64], [test "x$arm64" = xtrue])
 
 # Common sources
 SRCDIR=" src/common"
@@ -165,31 +182,37 @@ SRCDIR=${SRCDIR}" src/kex_rlwe_bcns15"
 if test x"$kex_lwe_frodo" = x"true"; then
   SRCDIR=${SRCDIR}" src/kex_lwe_frodo"
   AM_CPPFLAGS=${AM_CPPFLAGS}" -DENABLE_KEX_LWE_FRODO"
+  AC_DEFINE(ENABLE_KEX_LWE_FRODO, 1, "Define to 1 when FRODO enabled")
 fi
 
 if test x"$kex_mlwe_kyber" = x"true"; then
   SRCDIR=${SRCDIR}" src/kex_mlwe_kyber"
   AM_CPPFLAGS=${AM_CPPFLAGS}" -DENABLE_KEX_MLWE_KYBER"
+  AC_DEFINE(ENABLE_KEX_MLWE_KYBER, 1, "Define to 1 when KYBER enabled")
 fi
 
 if test x"$kex_ntru" = x"true"; then
   SRCDIR=${SRCDIR}" src/kex_ntru"
   AM_CPPFLAGS=${AM_CPPFLAGS}" -DENABLE_KEX_NTRU"
+  AC_DEFINE(ENABLE_KEX_NTRU, 1, "Define to 1 when NTRU enabled")
 fi
 
 if test x"$kex_rlwe_msrln16" = x"true"; then
   SRCDIR=${SRCDIR}" src/kex_rlwe_msrln16"
   AM_CPPFLAGS=${AM_CPPFLAGS}" -DENABLE_KEX_RLWE_MSRLN16"
+  AC_DEFINE(ENABLE_KEX_RLWE_MSRLN16, 1, "Define to 1 when RLWE MSRLN16 enabled")
 fi
 
 if test x"$kex_rlwe_newhope" = x"true"; then
   SRCDIR=${SRCDIR}" src/kex_rlwe_newhope"
   AM_CPPFLAGS=${AM_CPPFLAGS}" -DENABLE_KEX_RLWE_NEWHOPE"
+  AC_DEFINE(ENABLE_KEX_RLWE_NEWHOPE, 1, "Define to 1 when RLWE NEWHOPE enabled")
 fi
 
 if test x"$kex_sidh_cln16" = x"true"; then
   SRCDIR=${SRCDIR}" src/kex_sidh_cln16"
   AM_CPPFLAGS=${AM_CPPFLAGS}" -DENABLE_KEX_SIDH_CLN16"
+  AC_DEFINE(ENABLE_KEX_SIDH_CLN16, 1, "Define to 1 when SIDH CLN16 enabled")
 fi
 
 SRCDIR=${SRCDIR}" src/sig"
@@ -212,18 +235,16 @@ if test x"$openssl" = x"true"; then
 fi
 if test x"$kex_code_mcbits" = x"true"; then
   AM_CPPFLAGS=${AM_CPPFLAGS}" -DENABLE_CODE_MCBITS"
+  AC_DEFINE(ENABLE_CODE_MCBITS, 1, "Define to 1 when MCBITS enabled")
 fi
 if test x"$kex_sidh_iqc_ref" = x"true"; then
   AM_CPPFLAGS=${AM_CPPFLAGS}" -DENABLE_SIDH_IQC_REF"
   SRCDIR=${SRCDIR}" src/kex_sidh_iqc_ref"
-fi
-
-if test x"$picnic" = x"true"; then
-  AM_CPPFLAGS=${AM_CPPFLAGS}" -DENABLE_PICNIC"
-  SRCDIR=${SRCDIR}" src/sig_picnic"
+  AC_DEFINE(ENABLE_SIDH_IQC_REF, 1, "Define to 1 when SIDH IQC enabled")
 fi
 
 AC_SUBST(AM_CPPFLAGS)
+AC_SUBST(AM_CFLAGS)
 AC_SUBST(SRCDIR)
 AC_SUBST(USE_OPENSSL)
 AC_SUBST(USE_AES_NI)
@@ -235,8 +256,8 @@ AC_SUBST(USE_KEX_MLWE_KYBER)
 AC_SUBST(USE_KEX_RLWE_MSRLN16)
 AC_SUBST(USE_KEX_RLWE_NEWHOPE)
 AC_SUBST(USE_KEX_SIDH_CLN16)
-AC_SUBST(USE_PICNIC)
 AC_SUBST(ON_DARWIN)
+AC_SUBST(X86_64)
 
 
 AC_CONFIG_FILES([Makefile
