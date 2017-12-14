@@ -340,9 +340,11 @@ $OPENSSLDIR =~ s|/|$o|g;
 # Build OQS
 if ($platform eq "VC-WIN32") {
 $vsplatform = "x86";
+$vsplatformdir = "Win32";
 }
 elsif (($platform eq "VC-WIN64A") || ($platform eq "VC-WIN64I"))  {
 $vsplatform = "x64";
+$vsplatformdir = "x64";
 }
 if ($debug = "1") {
 $vsconfig = "Debug";
@@ -501,7 +503,7 @@ EX_LIBS=$ex_libs
 SRC_D=$src_dir
 
 LINK_CMD=$link
-LFLAGS=$lflags /libpath:vendor${o}liboqs${o}VisualStudio${o}$vsplatform${o}$vsconfig
+LFLAGS=$lflags /libpath:vendor${o}liboqs${o}VisualStudio${o}$vsplatformdir${o}$vsconfig
 RSC=$rsc
 
 # The output directory for everything interesting
