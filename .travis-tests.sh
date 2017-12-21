@@ -4,7 +4,6 @@ set -e
 
 export CC=$CC_OQS
 
-autoreconf -i
 enable_disable_str=
 if [[ ${USE_OPENSSL} == 1 ]];then
   enable_disable_str=" --enable-openssl"
@@ -55,11 +54,17 @@ if [[ ${ENABLE_KEX_SIDH_CLN16} == 0 ]];then
   enable_disable_str+=" --disable-kex-sidh-cln16"
 fi
 
-./download-and-setup-picnic.sh
-if [[ ! -z "${M4RI_DIR// }" ]];then
-  enable_disable_str+=" --with-m4ri-dir=${M4RI_DIR}"
+if [[ ${ENABLE_SIG_PICNIC} == 0 ]];then
+  enable_disable_str+=" --disable-sig-picnic"
+else
+  cd src/sig_picnic;sh ./build_picnic.sh;cd ../..;
 fi
 
+if [[ ${ENABLE_KEX_RLWE_NEWHOPE_AVX2} == 1 ]];then
+  enable_disable_str+=" --enable-kex-rlwe-newhope-avx2"
+fi
+
+autoreconf -i
 ./configure --enable-silent-rules ${enable_disable_str}
 make clean
 make
@@ -68,3 +73,5 @@ make test
 for f in $(ls .travis/*-check.sh); do
     bash $f;
 done
+
+
