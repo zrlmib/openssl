@@ -2,16 +2,6 @@ This experimental version of OpenSSL integrates the Open Quantum Safe (OQS) libr
 particular, it creates new authentication mechanisms based on the OQS signature algorithms
 (currently only the Picnic scheme is supported).
 
-Setup
-=====
-
-Some manual setup is enable the Picnic signature scheme. The following script downloads
-and builds the updated library (not yet merged in OQS' master).
-./download-updated-picnic.sh
-
-Test
-====
-
 Run the following programs to test the PQC kex+auth TLS connection.
 
 To generate a Picnic key (using a new openssl app genoqs):

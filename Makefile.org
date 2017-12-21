@@ -276,12 +276,10 @@ sub_all: build_all
 
 build_all: build_libs build_apps build_tests build_tools
 
-#build_libs: build_liboqs build_libcrypto build_libssl openssl.pc
-build_libs:  build_libcrypto build_libssl openssl.pc
+build_libs: build_liboqs build_libcrypto build_libssl openssl.pc
 
-# THIS IS DONE WITH THE MANUAL BATCH FILE (download-updated-picnic.sh) AS A TEMP MEASURE
-#build_liboqs:
-#	cd vendor/liboqs && autoreconf -i && ./configure && $(MAKE)
+build_liboqs:
+	cd vendor/liboqs && autoreconf -i && ./configure && $(MAKE)
 
 build_libcrypto: build_crypto build_engines libcrypto.pc
 build_libssl: build_ssl libssl.pc
