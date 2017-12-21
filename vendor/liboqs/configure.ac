@@ -127,6 +127,13 @@ ARG_DISBL_SET([kex-sidh-cln16], [disable KEX-SIDH-CLN16.])
 AM_CONDITIONAL([kex_sidh_cln16], [test "x$kex_sidh_cln16" = xtrue])
 AM_CONDITIONAL([USE_KEX_SIDH_CLN16], [test "x$kex_sidh_cln16" = xtrue])
 
+ARG_DISBL_SET([sig-picnic], [disable SIG-PICNIC.])
+AM_CONDITIONAL([sig_picnic], [test "x$sig_picnic" = xtrue])
+AM_CONDITIONAL([USE_SIG_PICNIC], [test "x$sig_picnic" = xtrue])
+
+ARG_ENABL_SET([kex-rlwe-newhope-avx2], [enable KEX-RLWE-NEWHOPE-AVX2.])
+AM_CONDITIONAL([kex_rlwe_newhope_avx2], [test "x$kex_rlwe_newhope_avx2" = xtrue])
+AM_CONDITIONAL([USE_KEX_RLWE_NEWHOPE_AVX2], [test "x$kex_rlwe_newhope_avx2" = xtrue])
 
 AC_CANONICAL_HOST
 
@@ -215,14 +222,24 @@ if test x"$kex_sidh_cln16" = x"true"; then
   AC_DEFINE(ENABLE_KEX_SIDH_CLN16, 1, "Define to 1 when SIDH CLN16 enabled")
 fi
 
-SRCDIR=${SRCDIR}" src/sig"
-
 # Conditional KEX
 if test x"$kex_code_mcbits" = x"true"; then
   SRCDIR=${SRCDIR}" src/kex_code_mcbits"
 fi
 if test x"$kex_sidh_iqc_ref" = x"true"; then
   SRCDIR=${SRCDIR}" src/kex_sidh_iqc_ref"
+fi
+
+# SIG
+SRCDIR=${SRCDIR}" src/sig"
+
+if test x"$sig_picnic" = x"true"; then
+  SRCDIR=${SRCDIR}" src/sig_picnic"
+  AM_CPPFLAGS=${AM_CPPFLAGS}" -DENABLE_SIG_PICNIC"
+  AC_CONFIG_COMMANDS_POST([echo Building Picnic library])
+  AC_CONFIG_COMMANDS_POST([cd src/sig_picnic])
+  AC_CONFIG_COMMANDS_POST([./build_picnic.sh])
+  AC_CONFIG_COMMANDS_POST([cd ../..])
 fi
 
 # Flags
@@ -243,6 +260,11 @@ if test x"$kex_sidh_iqc_ref" = x"true"; then
   AC_DEFINE(ENABLE_SIDH_IQC_REF, 1, "Define to 1 when SIDH IQC enabled")
 fi
 
+if test x"$kex_rlwe_newhope_avx2" = x"true"; then
+  SRCDIR=${SRCDIR}" src/kex_rlwe_newhope/avx2"
+  AM_CPPFLAGS=${AM_CPPFLAGS}" -DENABLE_KEX_RLWE_NEWHOPE_AVX2"
+fi
+
 AC_SUBST(AM_CPPFLAGS)
 AC_SUBST(AM_CFLAGS)
 AC_SUBST(SRCDIR)
@@ -256,8 +278,10 @@ AC_SUBST(USE_KEX_MLWE_KYBER)
 AC_SUBST(USE_KEX_RLWE_MSRLN16)
 AC_SUBST(USE_KEX_RLWE_NEWHOPE)
 AC_SUBST(USE_KEX_SIDH_CLN16)
+AC_SUBST(USE_SIG_PICNIC)
 AC_SUBST(ON_DARWIN)
 AC_SUBST(X86_64)
+AC_SUBST(USE_KEX_RLWE_NEWHOPE_AVX2)
 
 
 AC_CONFIG_FILES([Makefile
@@ -278,6 +302,7 @@ AC_CONFIG_FILES([Makefile
                  src/kex_lwe_frodo/Makefile
                  src/sig/Makefile
                  src/sig_picnic/Makefile
-                 src/kex_mlwe_kyber/Makefile])
+                 src/kex_mlwe_kyber/Makefile
+                 src/kex_rlwe_newhope/avx2/Makefile])
 
 AC_OUTPUT
