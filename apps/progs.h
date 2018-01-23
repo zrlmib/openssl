@@ -104,9 +104,7 @@ FUNCTION functions[] = {
 #ifndef OPENSSL_NO_RSA
     {FUNC_TYPE_GENERAL, "genrsa", genrsa_main},
 #endif
-#ifndef OPENSSL_NO_OQS
     {FUNC_TYPE_GENERAL, "genoqs", genoqs_main},
-#endif
 #ifndef OPENSSL_NO_DSA
     {FUNC_TYPE_GENERAL, "gendsa", gendsa_main},
 #endif

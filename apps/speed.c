@@ -559,7 +559,7 @@ int MAIN(int argc, char **argv)
 # define R_OQSKEX_RLWE_NEWHOPE   2
 # define R_OQSKEX_RLWE_MSRLN16   3
 # define R_OQSKEX_LWE_FRODO_RECOMMENDED     4
-# define R_OQSKEX_SIDH_CLN16   5
+# define R_OQSKEX_SIDH_MSR   5
 
 # ifndef OPENSSL_NO_RSA
     RSA *rsa_key[RSA_NUM];
@@ -641,7 +641,7 @@ int MAIN(int argc, char **argv)
         "rlwe_newhope",
 	"rlwe_msrln16",
         "lwe_frodo_recommended",
-	"sidh_cln16",
+	"sidh_msr",
     };
 # endif
 
@@ -1135,8 +1135,8 @@ int MAIN(int argc, char **argv)
             oqskex_doit[R_OQSKEX_RLWE_MSRLN16] = 2;
         else if (strcmp(*argv, "oqskex_lwe_frodo_recommended") == 0)
             oqskex_doit[R_OQSKEX_LWE_FRODO_RECOMMENDED] = 3;
-        else if (strcmp(*argv, "oqskex_sidh_cln16") == 0)
-            oqskex_doit[R_OQSKEX_SIDH_CLN16] = 2;
+        else if (strcmp(*argv, "oqskex_sidh_msr") == 0)
+            oqskex_doit[R_OQSKEX_SIDH_MSR] = 2;
         else if (strcmp(*argv, "oqskex") == 0) {
             for (i = 0; i < OQSKEX_NUM; i++)
                 oqskex_doit[i] = 1;
@@ -1247,7 +1247,7 @@ int MAIN(int argc, char **argv)
 # ifndef OPENSSL_NO_OQSKEX
             BIO_printf(bio_err, "oqskex_generic  oqskex_rlwe_bcns15  oqskex_rlwe_newhope\n");
             BIO_printf(bio_err, "oqskex_rlwe_msrln16  oqskex_lwe_frodo_recommended\n");
-            BIO_printf(bio_err, "oqskex_sidh_cln16\n");
+            BIO_printf(bio_err, "oqskex_sidh_msr\n");
             BIO_printf(bio_err, "oqskex\n");
 # endif
 
@@ -2474,8 +2474,8 @@ int MAIN(int argc, char **argv)
                 oqskex_kex[j] = OQS_KEX_new(oqskex_rand[j], OQS_KEX_alg_rlwe_msrln16, NULL, 0, NULL);
             } else if (j == R_OQSKEX_LWE_FRODO_RECOMMENDED) {
                 oqskex_kex[j] = OQS_KEX_new(oqskex_rand[j], OQS_KEX_alg_lwe_frodo, (unsigned char *) "0123456789ABCDEF", 16, "recommended");
-            } else if (j == R_OQSKEX_SIDH_CLN16) {
-                oqskex_kex[j] = OQS_KEX_new(oqskex_rand[j], OQS_KEX_alg_sidh_cln16, NULL, 0, NULL);
+            } else if (j == R_OQSKEX_SIDH_MSR) {
+                oqskex_kex[j] = OQS_KEX_new(oqskex_rand[j], OQS_KEX_alg_sidh_msr_503, NULL, 0, NULL);
 	    }
             if (oqskex_kex[j] == NULL) {
                 BIO_printf(bio_err,"OQSKEX failure - OQS_KEX_new.\n");
