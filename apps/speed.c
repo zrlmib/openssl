@@ -250,7 +250,7 @@ static int do_multi(int multi);
 # define SIZE_NUM        5
 # define RSA_NUM         4
 # define DSA_NUM         3
-# define OQSKEX_NUM      6
+# define OQSKEX_NUM      9 /* 10 kyber temporarily disabled */
 
 # define EC_NUM       16
 # define MAX_ECDH_SIZE 256
@@ -646,6 +646,9 @@ int MAIN(int argc, char **argv)
 	"rlwe_msrln16",
         "lwe_frodo_recommended",
 	"sidh_msr",
+	"sidh_iqc_ref",
+	"mcbits",
+	"ntru",
     };
 # endif
 
@@ -1140,7 +1143,7 @@ int MAIN(int argc, char **argv)
         else if (strcmp(*argv, "oqskex_lwe_frodo_recommended") == 0)
             oqskex_doit[R_OQSKEX_LWE_FRODO_RECOMMENDED] = 3;
         else if (strcmp(*argv, "oqskex_sidh_msr") == 0)
-            oqskex_doit[R_OQSKEX_SIDH_CLN16] = 2;
+            oqskex_doit[R_OQSKEX_SIDH_MSR] = 2;
         else if (strcmp(*argv, "oqskex_sidh_iqc_ref") == 0)
             oqskex_doit[R_OQSKEX_SIDH_IQC_REF] = 2;
         else if (strcmp(*argv, "oqskex_code_mcbits") == 0)
@@ -2499,8 +2502,8 @@ int MAIN(int argc, char **argv)
 	      /* kyber temporarily removed from OQS
 	    } else if (j == R_OQSKEX_MLWE_KYBER) {
 	      oqskex_kex[j] = OQS_KEX_new(oqskex_rand[j], OQS_KEX_alg_mlwe_kyber, NULL, 0, NULL);
-	    }
 	      */
+	    }
             if (oqskex_kex[j] == NULL) {
                 BIO_printf(bio_err,"OQSKEX failure - OQS_KEX_new.\n");
                 ERR_print_errors(bio_err);
