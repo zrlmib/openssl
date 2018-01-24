@@ -36,6 +36,8 @@ liboqs currently contains:
 
 Detailed information about each algorithm and implementations can be found in the [docs/Algorithm data sheets](https://github.com/open-quantum-safe/liboqs/tree/master/docs/Algorithm%20data%20sheets) directory.
 
+Detailed information about each algorithm and implementations can be found in the [docs/Algorithm data sheets](https://github.com/open-quantum-safe/liboqs/tree/master/docs/Algorithm%20data%20sheets) directory.
+
 Building and Running on Linux and macOS
 ---------------------------------------
 
@@ -208,6 +210,28 @@ Building for ARM
 To build on ARM (such as a Raspberry Pi), certain ciphers must be disabled when running configure:
 
 	./configure --disable-aes-ni
+
+Building for Android
+--------------------
+
+Install Android NDK
+
+Create a standalone toolchain for the platform that you wish to cross compile for (e.g. NDK_BUNDLE="~/Android/Sdk/ndk-bundle" ARCH=arm64 INSTALL_DIR="/tmp/ndk-toolchain"):
+
+	$NDK_BUNDLE/build/tools/make_standalone_toolchain.py --arch $ARCH --install-dir $INSTALL_DIR
+
+Configure and build for Android after running `autoreconf -i` (e.g. HOST=aarch64-linux-android TOOLCHAIN_DIR=$INSTALL_DIR):
+
+	./configure-android --host=$HOST --toolchain=$TOOLCHAIN_DIR
+	make
+
+Run it from your Android device:
+
+	adb push test_kex  /data/local/tmp/
+	adb shell "/data/local/tmp/test_kex"
+
+Tested on SM-930F
+
 
 Documentation
 -------------

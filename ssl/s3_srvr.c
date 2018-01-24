@@ -497,6 +497,10 @@ int ssl3_accept(SSL *s)
                 || (alg_k & SSL_kOQSKEX_RLWE_MSRLN16)
                 || (alg_k & SSL_kOQSKEX_LWE_FRODO_RECOMMENDED)
                 || (alg_k & SSL_kOQSKEX_SIDH_MSR)
+                || (alg_k & SSL_kOQSKEX_SIDH_IQC_REF)
+                || (alg_k & SSL_kOQSKEX_CODE_MCBITS)
+                || (alg_k & SSL_kOQSKEX_NTRU)
+                || (alg_k & SSL_kOQSKEX_MLWE_KYBER)
                 || ((alg_k & SSL_kRSA)
                     && (s->cert->pkeys[SSL_PKEY_RSA_ENC].privatekey == NULL
                         || (SSL_C_IS_EXPORT(s->s3->tmp.new_cipher)
@@ -1849,7 +1853,7 @@ int ssl3_send_server_key_exchange(SSL *s)
             r[3] = NULL;
 
 #ifndef OPENSSL_NO_HYBRID_OQSKEX_ECDHE
-            if ((type & SSL_kOQSKEX_GENERIC) || (type & SSL_kOQSKEX_RLWE_BCNS15) || (type & SSL_kOQSKEX_RLWE_NEWHOPE) || (type & SSL_kOQSKEX_RLWE_MSRLN16) || (type & SSL_kOQSKEX_LWE_FRODO_RECOMMENDED) || (type & SSL_kOQSKEX_SIDH_MSR)) {
+            if ((type & SSL_kOQSKEX_GENERIC) || (type & SSL_kOQSKEX_RLWE_BCNS15) || (type & SSL_kOQSKEX_RLWE_NEWHOPE) || (type & SSL_kOQSKEX_RLWE_MSRLN16) || (type & SSL_kOQSKEX_LWE_FRODO_RECOMMENDED) || (type & SSL_kOQSKEX_SIDH_MSR) || (type & SSL_kOQSKEX_SIDH_IQC_REF) || (type & SSL_kOQSKEX_CODE_MCBITS) || (type & SSL_kOQSKEX_NTRU) || (type & SSL_kOQSKEX_MLWE_KYBER)) {
                 if ((s->s3->tmp.oqskex_rand = OQS_RAND_new(OQS_RAND_alg_default)) == NULL) {
                     SSLerr(SSL_F_SSL3_SEND_SERVER_KEY_EXCHANGE,ERR_R_MALLOC_FAILURE);
                     goto err;
@@ -1890,7 +1894,31 @@ int ssl3_send_server_key_exchange(SSL *s)
                         SSLerr(SSL_F_SSL3_SEND_SERVER_KEY_EXCHANGE,ERR_R_MALLOC_FAILURE);
                         goto err;
                     }
+                } else if (type & SSL_kOQSKEX_SIDH_IQC_REF) {
+                    if ((s->s3->tmp.oqskex_kex = OQS_KEX_new(s->s3->tmp.oqskex_rand, OQS_KEX_alg_sidh_iqc_ref, NULL, 0, NULL)) == NULL) {
+                        SSLerr(SSL_F_SSL3_SEND_SERVER_KEY_EXCHANGE,ERR_R_MALLOC_FAILURE);
+                        goto err;
+                    }
+                } else if (type & SSL_kOQSKEX_CODE_MCBITS) {
+                    if ((s->s3->tmp.oqskex_kex = OQS_KEX_new(s->s3->tmp.oqskex_rand, OQS_KEX_alg_code_mcbits, NULL, 0, NULL)) == NULL) {
+                        SSLerr(SSL_F_SSL3_SEND_SERVER_KEY_EXCHANGE,ERR_R_MALLOC_FAILURE);
+                        goto err;
+                    }
+                } else if (type & SSL_kOQSKEX_NTRU) {
+                    if ((s->s3->tmp.oqskex_kex = OQS_KEX_new(s->s3->tmp.oqskex_rand, OQS_KEX_alg_ntru, NULL, 0, NULL)) == NULL) {
+                        SSLerr(SSL_F_SSL3_SEND_SERVER_KEY_EXCHANGE,ERR_R_MALLOC_FAILURE);
+                        goto err;
+                    }
+                } else if (type & SSL_kOQSKEX_MLWE_KYBER) {
+                    if ((s->s3->tmp.oqskex_kex = OQS_KEX_new(s->s3->tmp.oqskex_rand, OQS_KEX_alg_mlwe_kyber, NULL, 0, NULL)) == NULL) {
+                        SSLerr(SSL_F_SSL3_SEND_SERVER_KEY_EXCHANGE,ERR_R_MALLOC_FAILURE);
+                        goto err;
+                    }
                 }
+
+
+
+
 
                 if (OQS_KEX_alice_0(s->s3->tmp.oqskex_kex, &(s->s3->tmp.oqskex_priv), &oqskex_srvr_msg, &oqskex_srvr_msg_len) != 1) {
                     SSLerr(SSL_F_SSL3_SEND_SERVER_KEY_EXCHANGE,ERR_R_INTERNAL_ERROR);
@@ -1904,7 +1932,7 @@ int ssl3_send_server_key_exchange(SSL *s)
         } else
 #endif                          /* !OPENSSL_NO_ECDH */
 #ifndef OPENSSL_NO_OQSKEX
-        if (((type & SSL_kOQSKEX_GENERIC) || (type & SSL_kOQSKEX_RLWE_BCNS15) || (type & SSL_kOQSKEX_RLWE_NEWHOPE) || (type & SSL_kOQSKEX_RLWE_MSRLN16) || (type & SSL_kOQSKEX_LWE_FRODO_RECOMMENDED) || (type & SSL_kOQSKEX_SIDH_MSR)) && !(type & SSL_kEECDH)) {
+        if (((type & SSL_kOQSKEX_GENERIC) || (type & SSL_kOQSKEX_RLWE_BCNS15) || (type & SSL_kOQSKEX_RLWE_NEWHOPE) || (type & SSL_kOQSKEX_RLWE_MSRLN16) || (type & SSL_kOQSKEX_LWE_FRODO_RECOMMENDED) || (type & SSL_kOQSKEX_SIDH_MSR) || (type & SSL_kOQSKEX_SIDH_IQC_REF) || (type & SSL_kOQSKEX_CODE_MCBITS) || (type & SSL_kOQSKEX_NTRU) || (type & SSL_kOQSKEX_MLWE_KYBER)) && !(type & SSL_kEECDH)) {
             if ((s->s3->tmp.oqskex_rand = OQS_RAND_new(OQS_RAND_alg_default)) == NULL) {
                 SSLerr(SSL_F_SSL3_SEND_SERVER_KEY_EXCHANGE,ERR_R_MALLOC_FAILURE);
                 goto err;
@@ -1945,7 +1973,31 @@ int ssl3_send_server_key_exchange(SSL *s)
                     SSLerr(SSL_F_SSL3_SEND_SERVER_KEY_EXCHANGE,ERR_R_MALLOC_FAILURE);
                     goto err;
                 }
+            } else if (type & SSL_kOQSKEX_SIDH_IQC_REF) {
+                if ((s->s3->tmp.oqskex_kex = OQS_KEX_new(s->s3->tmp.oqskex_rand, OQS_KEX_alg_sidh_iqc_ref, NULL, 0, NULL)) == NULL) {
+                    SSLerr(SSL_F_SSL3_SEND_SERVER_KEY_EXCHANGE,ERR_R_MALLOC_FAILURE);
+                    goto err;
+                }
+            } else if (type & SSL_kOQSKEX_CODE_MCBITS) {
+                if ((s->s3->tmp.oqskex_kex = OQS_KEX_new(s->s3->tmp.oqskex_rand, OQS_KEX_alg_code_mcbits, NULL, 0, NULL)) == NULL) {
+                    SSLerr(SSL_F_SSL3_SEND_SERVER_KEY_EXCHANGE,ERR_R_MALLOC_FAILURE);
+                    goto err;
+                }
+            } else if (type & SSL_kOQSKEX_NTRU) {
+                if ((s->s3->tmp.oqskex_kex = OQS_KEX_new(s->s3->tmp.oqskex_rand, OQS_KEX_alg_ntru, NULL, 0, NULL)) == NULL) {
+                    SSLerr(SSL_F_SSL3_SEND_SERVER_KEY_EXCHANGE,ERR_R_MALLOC_FAILURE);
+                    goto err;
+                }
+            } else if (type & SSL_kOQSKEX_MLWE_KYBER) {
+                if ((s->s3->tmp.oqskex_kex = OQS_KEX_new(s->s3->tmp.oqskex_rand, OQS_KEX_alg_mlwe_kyber, NULL, 0, NULL)) == NULL) {
+                    SSLerr(SSL_F_SSL3_SEND_SERVER_KEY_EXCHANGE,ERR_R_MALLOC_FAILURE);
+                    goto err;
+                }
             }
+
+
+
+
 
             if (OQS_KEX_alice_0(s->s3->tmp.oqskex_kex, &(s->s3->tmp.oqskex_priv), &oqskex_srvr_msg, &oqskex_srvr_msg_len) != 1) {
                 SSLerr(SSL_F_SSL3_SEND_SERVER_KEY_EXCHANGE,ERR_R_INTERNAL_ERROR);
@@ -2099,7 +2151,7 @@ int ssl3_send_server_key_exchange(SSL *s)
 #endif
 
 #ifndef OPENSSL_NO_OQSKEX
-        if ((type & SSL_kOQSKEX_GENERIC) || (type & SSL_kOQSKEX_RLWE_BCNS15) || (type & SSL_kOQSKEX_RLWE_NEWHOPE) || (type & SSL_kOQSKEX_RLWE_MSRLN16) || (type & SSL_kOQSKEX_LWE_FRODO_RECOMMENDED) || (type & SSL_kOQSKEX_SIDH_MSR)) {
+        if ((type & SSL_kOQSKEX_GENERIC) || (type & SSL_kOQSKEX_RLWE_BCNS15) || (type & SSL_kOQSKEX_RLWE_NEWHOPE) || (type & SSL_kOQSKEX_RLWE_MSRLN16) || (type & SSL_kOQSKEX_LWE_FRODO_RECOMMENDED) || (type & SSL_kOQSKEX_SIDH_MSR) || (type & SSL_kOQSKEX_SIDH_IQC_REF) || (type & SSL_kOQSKEX_CODE_MCBITS) || (type & SSL_kOQSKEX_NTRU) || (type & SSL_kOQSKEX_MLWE_KYBER)) {
             p[0] = (oqskex_srvr_msg_len >> 8) & 0xFF;
             p[1] =  oqskex_srvr_msg_len       & 0xFF;
             p += 2;
@@ -2921,7 +2973,7 @@ int ssl3_get_client_key_exchange(SSL *s)
         }
 
 #ifndef OPENSSL_NO_HYBRID_OQSKEX_ECDHE
-        if ((alg_k & SSL_kOQSKEX_GENERIC) || (alg_k & SSL_kOQSKEX_RLWE_BCNS15) || (alg_k & SSL_kOQSKEX_RLWE_NEWHOPE) || (alg_k & SSL_kOQSKEX_RLWE_MSRLN16)|| (alg_k & SSL_kOQSKEX_LWE_FRODO_RECOMMENDED) || (alg_k & SSL_kOQSKEX_SIDH_MSR)) {
+        if ((alg_k & SSL_kOQSKEX_GENERIC) || (alg_k & SSL_kOQSKEX_RLWE_BCNS15) || (alg_k & SSL_kOQSKEX_RLWE_NEWHOPE) || (alg_k & SSL_kOQSKEX_RLWE_MSRLN16)|| (alg_k & SSL_kOQSKEX_LWE_FRODO_RECOMMENDED) || (alg_k & SSL_kOQSKEX_SIDH_MSR) || (alg_k & SSL_kOQSKEX_SIDH_IQC_REF) || (alg_k & SSL_kOQSKEX_CODE_MCBITS) || (alg_k & SSL_kOQSKEX_NTRU) || (alg_k & SSL_kOQSKEX_MLWE_KYBER)) {
             /* Parse client message */
             if (n < 2) {
                 SSLerr(SSL_F_SSL3_GET_CLIENT_KEY_EXCHANGE, SSL_R_BAD_LENGTH);
@@ -2970,7 +3022,7 @@ int ssl3_get_client_key_exchange(SSL *s)
         s->s3->tmp.ecdh = NULL;
 
 #ifndef OPENSSL_NO_HYBRID_OQSKEX_ECDHE
-        if ((alg_k & SSL_kOQSKEX_GENERIC) || (alg_k & SSL_kOQSKEX_RLWE_BCNS15) || (alg_k & SSL_kOQSKEX_RLWE_NEWHOPE) || (alg_k & SSL_kOQSKEX_RLWE_MSRLN16) || (alg_k & SSL_kOQSKEX_LWE_FRODO_RECOMMENDED) || (alg_k & SSL_kOQSKEX_SIDH_MSR)) {
+        if ((alg_k & SSL_kOQSKEX_GENERIC) || (alg_k & SSL_kOQSKEX_RLWE_BCNS15) || (alg_k & SSL_kOQSKEX_RLWE_NEWHOPE) || (alg_k & SSL_kOQSKEX_RLWE_MSRLN16) || (alg_k & SSL_kOQSKEX_LWE_FRODO_RECOMMENDED) || (alg_k & SSL_kOQSKEX_SIDH_MSR) || (alg_k & SSL_kOQSKEX_SIDH_IQC_REF) || (alg_k & SSL_kOQSKEX_CODE_MCBITS) || (alg_k & SSL_kOQSKEX_NTRU) || (alg_k & SSL_kOQSKEX_MLWE_KYBER)) {
             if (OQS_KEX_alice_1(s->s3->tmp.oqskex_kex, s->s3->tmp.oqskex_priv, clnt_oqskex_msg, clnt_oqskex_msg_len, &pprime_oqskex, &nprime_oqskex) != 1) {
                 SSLerr(SSL_F_SSL3_GET_CLIENT_KEY_EXCHANGE, ERR_R_INTERNAL_ERROR);
                 goto err;
@@ -3002,7 +3054,7 @@ int ssl3_get_client_key_exchange(SSL *s)
     } else
 #endif
 #ifndef OPENSSL_NO_OQSKEX
-    if (((alg_k & SSL_kOQSKEX_GENERIC) || (alg_k & SSL_kOQSKEX_RLWE_BCNS15) || (alg_k & SSL_kOQSKEX_RLWE_NEWHOPE) || (alg_k & SSL_kOQSKEX_RLWE_MSRLN16) || (alg_k & SSL_kOQSKEX_LWE_FRODO_RECOMMENDED) || (alg_k & SSL_kOQSKEX_SIDH_MSR)) && !(alg_k & SSL_kEECDH)) {
+    if (((alg_k & SSL_kOQSKEX_GENERIC) || (alg_k & SSL_kOQSKEX_RLWE_BCNS15) || (alg_k & SSL_kOQSKEX_RLWE_NEWHOPE) || (alg_k & SSL_kOQSKEX_RLWE_MSRLN16) || (alg_k & SSL_kOQSKEX_LWE_FRODO_RECOMMENDED) || (alg_k & SSL_kOQSKEX_SIDH_MSR) || (alg_k & SSL_kOQSKEX_SIDH_IQC_REF) || (alg_k & SSL_kOQSKEX_CODE_MCBITS) || (alg_k & SSL_kOQSKEX_NTRU) || (alg_k & SSL_kOQSKEX_MLWE_KYBER)) && !(alg_k & SSL_kEECDH)) {
         int ret = 1;
 
         /* Parse client message */

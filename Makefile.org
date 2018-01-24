@@ -422,6 +422,7 @@ clean:	libclean
 	rm -f openssl.pc libssl.pc libcrypto.pc
 	rm -f speed.* .pure
 	rm -f $(TARFILE)
+	cd vendor/liboqs;make clean
 	@set -e; for i in $(ONEDIRS) ;\
 	do \
 	rm -fr $$i/*; \
@@ -452,7 +453,7 @@ LIBOQS_HEADERS = \
         kex_rlwe_bcns15.h \
         kex_rlwe_msrln16.h \
         kex_rlwe_newhope.h \
-        kex_sidh_cln16.h \
+        kex_sidh_msr.h \
         rand.h \
         rand_urandom_aesctr.h \
         rand_urandom_chacha20.h \
@@ -502,7 +503,7 @@ report:
 update: errors stacks util/libeay.num util/ssleay.num TABLE
 	@set -e; target=update; $(RECURSIVE_BUILD_CMD)
 
-depend:
+depend: build_liboqs
 	@set -e; target=depend; $(RECURSIVE_BUILD_CMD)
 
 lint:

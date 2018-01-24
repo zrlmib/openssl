@@ -560,6 +560,10 @@ int MAIN(int argc, char **argv)
 # define R_OQSKEX_RLWE_MSRLN16   3
 # define R_OQSKEX_LWE_FRODO_RECOMMENDED     4
 # define R_OQSKEX_SIDH_MSR   5
+# define R_OQSKEX_SIDH_IQC_REF   6
+# define R_OQSKEX_CODE_MCBITS   7
+# define R_OQSKEX_NTRU   8
+# define R_OQSKEX_MLWE_KYBER   9
 
 # ifndef OPENSSL_NO_RSA
     RSA *rsa_key[RSA_NUM];
@@ -1136,7 +1140,15 @@ int MAIN(int argc, char **argv)
         else if (strcmp(*argv, "oqskex_lwe_frodo_recommended") == 0)
             oqskex_doit[R_OQSKEX_LWE_FRODO_RECOMMENDED] = 3;
         else if (strcmp(*argv, "oqskex_sidh_msr") == 0)
-            oqskex_doit[R_OQSKEX_SIDH_MSR] = 2;
+            oqskex_doit[R_OQSKEX_SIDH_CLN16] = 2;
+        else if (strcmp(*argv, "oqskex_sidh_iqc_ref") == 0)
+            oqskex_doit[R_OQSKEX_SIDH_IQC_REF] = 2;
+        else if (strcmp(*argv, "oqskex_code_mcbits") == 0)
+            oqskex_doit[R_OQSKEX_CODE_MCBITS] = 2;
+        else if (strcmp(*argv, "oqskex_ntru") == 0)
+            oqskex_doit[R_OQSKEX_NTRU] = 2;
+        else if (strcmp(*argv, "oqskex_mlwe_kyber") == 0)
+            oqskex_doit[R_OQSKEX_MLWE_KYBER] = 2;
         else if (strcmp(*argv, "oqskex") == 0) {
             for (i = 0; i < OQSKEX_NUM; i++)
                 oqskex_doit[i] = 1;
@@ -2475,7 +2487,15 @@ int MAIN(int argc, char **argv)
             } else if (j == R_OQSKEX_LWE_FRODO_RECOMMENDED) {
                 oqskex_kex[j] = OQS_KEX_new(oqskex_rand[j], OQS_KEX_alg_lwe_frodo, (unsigned char *) "0123456789ABCDEF", 16, "recommended");
             } else if (j == R_OQSKEX_SIDH_MSR) {
-                oqskex_kex[j] = OQS_KEX_new(oqskex_rand[j], OQS_KEX_alg_sidh_msr_503, NULL, 0, NULL);
+	      oqskex_kex[j] = OQS_KEX_new(oqskex_rand[j], OQS_KEX_alg_sidh_msr_503, NULL, 0, NULL);
+	    } else if (j == R_OQSKEX_SIDH_IQC_REF) {
+	      oqskex_kex[j] = OQS_KEX_new(oqskex_rand[j], OQS_KEX_alg_sidh_iqc_ref, NULL, 0, NULL);
+	    } else if (j == R_OQSKEX_CODE_MCBITS) {
+	      oqskex_kex[j] = OQS_KEX_new(oqskex_rand[j], OQS_KEX_alg_code_mcbits, NULL, 0, NULL);
+	    } else if (j == R_OQSKEX_NTRU) {
+	      oqskex_kex[j] = OQS_KEX_new(oqskex_rand[j], OQS_KEX_alg_ntru, NULL, 0, NULL);
+	    } else if (j == R_OQSKEX_MLWE_KYBER) {
+	      oqskex_kex[j] = OQS_KEX_new(oqskex_rand[j], OQS_KEX_alg_mlwe_kyber, NULL, 0, NULL);
 	    }
             if (oqskex_kex[j] == NULL) {
                 BIO_printf(bio_err,"OQSKEX failure - OQS_KEX_new.\n");
