@@ -326,51 +326,6 @@ cleanup:
 	return rc;
 }
 
-static int kex_mem_bench_wrapper(OQS_RAND *rand, enum OQS_KEX_alg_name alg_name, const uint8_t *seed, const size_t seed_len, const char *named_parameters) {
-
-	OQS_KEX *kex = NULL;
-	int rc;
-
-	void *alice_priv = NULL;
-	uint8_t *alice_msg = NULL;
-	size_t alice_msg_len;
-	uint8_t *alice_key = NULL;
-	size_t alice_key_len;
-
-	uint8_t *bob_msg = NULL;
-	size_t bob_msg_len;
-	uint8_t *bob_key = NULL;
-	size_t bob_key_len;
-
-	kex = OQS_KEX_new(rand, alg_name, seed, seed_len, named_parameters);
-	if (kex == NULL) {
-		fprintf(stderr, "new_method failed\n");
-		goto err;
-	}
-
-	printf("running %s..\n", kex->method_name);
-
-	OQS_KEX_alice_0(kex, &alice_priv, &alice_msg, &alice_msg_len);
-	OQS_KEX_bob(kex, alice_msg, alice_msg_len, &bob_msg, &bob_msg_len, &bob_key, &bob_key_len);
-	OQS_KEX_alice_1(kex, alice_priv, bob_msg, bob_msg_len, &alice_key, &alice_key_len);
-
-	rc = 1;
-	goto cleanup;
-
-err:
-	rc = 0;
-
-cleanup:
-	free(alice_msg);
-	free(alice_key);
-	free(bob_msg);
-	free(bob_key);
-	OQS_KEX_alice_priv_free(kex, alice_priv);
-	OQS_KEX_free(kex);
-
-	return rc;
-}
-
 void print_help() {
 	printf("Usage: ./test_kex [options] [algorithms]\n");
 	printf("\nOptions:\n");
