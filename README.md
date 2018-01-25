@@ -22,7 +22,7 @@ Contents
 open-quantum-safe/openssl currently contains:
 
 - Integration of post-quantum key exchange primitives from liboqs into OpenSSL's `speed` command
-- Ciphersuites using post-quantum key exchange based on primitives from liboqs, including hybrid ciphersuites which also use ECDHE key exchange
+- Ciphersuites using post-quantum key exchange and authentication based on primitives from liboqs, including hybrid ciphersuites which also use ECDHE key exchange
 
 Our modifications are **only** for OpenSSL v1.0.2, and appear only on the [OpenSSL\_1\_0\_2-stable branch](https://github.com/open-quantum-safe/openssl/tree/OpenSSL_1_0_2-stable).
 
@@ -40,22 +40,35 @@ liboqs currently supports the following key exchange mechanisms:
 - `NTRU`: NTRU: key transport using NTRU public key encryption (Hoffstein, Pipher, Silverman, *ANTS 1998*) with the EES743EP1 parameter set, wrapper around the implementation from the NTRU Open Source project [https://github.com/NTRUOpenSourceProject/NTRUEncrypt](https://github.com/NTRUOpenSourceProject/NTRUEncrypt))
 - `MLWE-KYBER`: Kyber: a CCA-secure module-lattice-based key exchange mechanism (Bos, Ducas, Kiltz, Lepoint, Lyubashevsky, Schwabe, Shanck, Stehlé, *Real World Crypto 2017*, [https://eprint.iacr.org/2017/634](https://eprint.iacr.org/2017/634)), using the reference C implementation of Kyber from [pq-crystals/kyber](https://github.com/pq-crystals/kyber) **TEMPORARILY COMMENTED OUT**
 
+### Authentication mechanisms
+
+liboqs currently supports the following authentication mechanisms:
+
+- `PICNIC`: Picnic: a ZK-based signature mechanism (Melissa Chase, David Derler, Steven Goldfeder, Claudio Orlandi, Sebastian Ramacher, Christian Rechberger, Daniel Slamanig, Greg Zaverucha., [https://microsoft.github.io/Picnic/](https://microsoft.github.io/Picnic/)), using the reference C implementation of Picnic from [https://github.com/IAIK/Picnic](https://github.com/IAIK/Picnic)
+
 
 ### Ciphersuites
 
 For each post-quantum key exchange primitive `X`, there are the following ciphersuites:
 
-- `X-RSA-AES128-GCM-SHA256`
-- `X-ECDSA-AES128-GCM-SHA256`
-- `X-RSA-AES256-GCM-SHA384`
-- `X-ECDSA-AES256-GCM-SHA384`
-- `X-ECDHE-RSA-AES128-GCM-SHA256`
-- `X-ECDHE-ECDSA-AES128-GCM-SHA256`
-- `X-ECDHE-RSA-AES256-GCM-SHA384`
-- `X-ECDHE-ECDSA-AES256-GCM-SHA384`
+- OQSKEX-`X-RSA-AES128-GCM-SHA256`
+- OQSKEX-`X-ECDSA-AES128-GCM-SHA256`
+- OQSKEX-`X-RSA-AES256-GCM-SHA384`
+- OQSKEX-`X-ECDSA-AES256-GCM-SHA384`
+- OQSKEX-`X-ECDHE-RSA-AES128-GCM-SHA256`
+- OQSKEX-`X-ECDHE-ECDSA-AES128-GCM-SHA256`
+- OQSKEX-`X-ECDHE-RSA-AES256-GCM-SHA384`
+- OQSKEX-`X-ECDHE-ECDSA-AES256-GCM-SHA384`
 
 There is also a "generic" ciphersuite (`X` = `GENERIC`) which uses whichever key exchange primitive is configured as the default key exchange primitive in liboqs.  It is set to `GENERIC` = `RLWE-BCNS15`, but this can be changed.
 
+The following ciphersuites using the Picnic authentication mechanisms are supported:
+- OQSKEX-LWE-FRODO-RECOMMENDED-PICNIC-AES256-GCM-SHA384
+- OQSKEX-LWE-FRODO-RECOMMENDED-ECDHE-PICNIC-AES256-GCM-SHA384
+- OQSKEX-RLWE-MSRLN16-PICNIC-AES256-GCM-SHA384
+- OQSKEX-RLWE-MSRLN16-ECDHE-PICNIC-AES256-GCM-SHA384
+- OQSKEX-SIDH-MSR-PICNIC-AES256-GCM-SHA384
+- OQSKEX-SIDH-MSR-ECDHE-PICNIC-AES256-GCM-SHA384
 
 Building
 --------
@@ -144,6 +157,21 @@ In another terminal window, you can run a TLS client for any or all of the suppo
 	apps/openssl s_client -cipher OQSKEX-NTRU-ECDHE
 	apps/openssl s_client -cipher OQSKEX-MLWE-KYBER
 	apps/openssl s_client -cipher OQSKEX-MLWE-KYBER-ECDHE
+
+Run the following programs to test the PQC kex+auth TLS connection.
+
+To generate a Picnic key (using a new openssl app genoqs):
+	apps/openssl genoqs -picnic -out picnic.key
+
+To generate a Picnic cert:
+	apps/openssl req -new -x509 -days 365 -sha512 -key picnic.key -out picnic.crt -subj "/C=US/L=Redmond/CN=OQStest" -config apps/openssl.cnf
+
+To test a complete (kex+auth) PQS TLS connection, start a server (where 'X' is a mechanism that supports Picnic, see above):
+	apps/openssl s_server -cipher OQSKEX-'X'-PICNIC-AES256-GCM-SHA384 -cert picnic.crt -key picnic.key -HTTP
+
+And connect to it with a client (using the same 'X' as the server):
+	apps/openssl s_client -cipher OQSKEX-'X'-PICNIC-AES256-GCM-SHA384 -connect localhost:4433
+
 
 Current status and plans
 ------------------------
