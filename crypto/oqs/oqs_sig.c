@@ -6,7 +6,7 @@
 #include <openssl/pem.h>
 #include <openssl/ssl.h>
 
-#include "crypto/evp/evp_locl.h" /* in openssl/ */ 
+#include "crypto/evp/evp_locl.h" /* in openssl/ */
 #include "crypto/asn1/asn1_locl.h" /* in openssl/ */
 
 #include <oqs/rand.h>
@@ -14,14 +14,14 @@
 #include <oqs/sig.h>
 #include "oqs_sig.h"
 
-/* 
+/*
  * OQS note: the content of this file should be distributed in the OpenSSL
  * code base to avoid a manual registration of the OQS algs, but this makes
- * it simple to develop and test. 
+ * it simple to develop and test.
  *
  * Each OQS signature alg have its own NID, defined in oqs_sig.h.
  *
- * Error codes should be reviewed and functions defined for the OQSerr macro. 
+ * Error codes should be reviewed and functions defined for the OQSerr macro.
  */
 
 static int g_initialized = 0;
@@ -89,9 +89,10 @@ int pkey_oqs_copy(EVP_PKEY_CTX *dst, EVP_PKEY_CTX *src)
   dctx->pk = sctx->pk;
   dctx->references = sctx->references;
   dctx->md = sctx->md;
-  return 1;	
+  return 1;
 }
 
+void oqs_pkey_ctx_free(OQS_PKEY_CTX* ctx);
 void pkey_oqs_cleanup(EVP_PKEY_CTX *ctx)
 {
   OQS_PKEY_CTX *oqs = ctx->data;
@@ -150,14 +151,14 @@ int pkey_oqs_verify(EVP_PKEY_CTX *ctx,
 }
 
 int oqs_pkey_ctx_init(OQS_PKEY_CTX* ctx, enum OQS_SIG_algid algid) {
+  OQS_RAND *rand = NULL;
+  OQS_SIG *s = NULL;
+  uint8_t *priv = NULL;
+  uint8_t *pub = NULL;
+
   if (ctx == NULL) {
     goto err;
   }
-
-  OQS_RAND *rand = NULL;
-  OQS_SIG *s;
-  uint8_t *priv = NULL;
-  uint8_t *pub = NULL;
 
   rand = OQS_RAND_new(OQS_RAND_alg_default); // TODO: don't hardcode
   if (rand == NULL) {
@@ -221,7 +222,7 @@ int pkey_oqs_keygen(EVP_PKEY_CTX *ctx, EVP_PKEY *pkey)
   if (OQS_SIG_keygen(oqs_ctx->s, oqs_ctx->sk, oqs_ctx->pk) != 1) {
     goto err;
   }
-  
+
   pkey->pkey.ptr = (void*) oqs_ctx;
   if (EVP_PKEY_assign(pkey, ctx->pmeth->pkey_id, oqs_ctx)) {
     OQS_up_ref(oqs_ctx);
@@ -253,7 +254,7 @@ static int pkey_oqs_ctrl(EVP_PKEY_CTX *ctx, int type, int p1, void *p2)
     case EVP_PKEY_CTRL_DIGESTINIT:
     case EVP_PKEY_CTRL_PKCS7_SIGN:
     case EVP_PKEY_CTRL_CMS_SIGN:
-      return 1; 
+      return 1;
     case EVP_PKEY_CTRL_PEER_KEY:
 	  OQSerr(0, ERR_R_FATAL);
 	  return -2; // error code returned by calling function in p_lib.c
@@ -309,7 +310,7 @@ typedef struct {
 // Public key
 typedef struct {
   long algid;
-  ASN1_OCTET_STRING *pk;	
+  ASN1_OCTET_STRING *pk;
 } oqsasn1pk;
 
 ASN1_SEQUENCE(oqsasn1sk) ={
@@ -382,7 +383,7 @@ static int oqs_priv_decode(EVP_PKEY *pkey, PKCS8_PRIV_KEY_INFO *p8)
   a.pk = ASN1_OCTET_STRING_new();
 
   // d2i_TYPE converts an ASN.1 object from its DER encoded form to its
-  // internal standardized form. 
+  // internal standardized form.
   d2i_oqsasn1sk(&asn1,(const unsigned char**)&p, plen);
 
   OQS_PKEY_CTX *oqs_ctx = (OQS_PKEY_CTX*) OPENSSL_malloc(sizeof(OQS_PKEY_CTX));
@@ -394,7 +395,7 @@ static int oqs_priv_decode(EVP_PKEY *pkey, PKCS8_PRIV_KEY_INFO *p8)
   if (asn1->sk->length != oqs_ctx->s->priv_key_len ||
       asn1->pk->length != oqs_ctx->s->pub_key_len) {
     OQSerr(0, ERR_R_FATAL);
-    return 0;    
+    return 0;
   }
   memcpy(oqs_ctx->sk, asn1->sk->data, oqs_ctx->s->priv_key_len);
   memcpy(oqs_ctx->pk, asn1->pk->data, oqs_ctx->s->pub_key_len);
@@ -437,7 +438,7 @@ static int oqs_pub_decode(EVP_PKEY *pkey, X509_PUBKEY *pubkey)
   // make sure the asn1 values are of the right size
   if (asn1->pk->length != oqs_ctx->s->pub_key_len) {
     OQSerr(0, ERR_R_FATAL);
-    return 0;    
+    return 0;
   }
   memcpy(oqs_ctx->pk, asn1->pk->data, oqs_ctx->s->pub_key_len);
   ASN1_OCTET_STRING_free(a.pk);
@@ -456,7 +457,7 @@ static int oqs_priv_encode(PKCS8_PRIV_KEY_INFO *p8, const EVP_PKEY *pkey)
   ASN1_INTEGER *params = NULL;
   unsigned char* key_data = NULL;
   int key_length = 0;
-  
+
   int algid = get_oqs_alg_id(pkey->type);
   if (algid < 0) {
     OQSerr(0, ERR_R_FATAL);
@@ -549,7 +550,7 @@ static int oqs_pub_print(BIO *bp, const EVP_PKEY *pkey, int indent,
     BIO_write(bp, buf, 3);
   }
   BIO_write(bp,"\n",1);
-  return 1;	
+  return 1;
 }
 
 // Prints the signature for the X.509 certificate as in openssl x509 -text
@@ -649,7 +650,7 @@ void OQS_add_all_algorithms()
   if (!g_initialized) {
 
     /* TODO: we could use macros for the following code */
-    
+
     /* add the OQS methods (for each sig alg)
      * FIXME: OBJ_create assigns a new NID (by incrementing the NUM_NID value
      *        (defined in obj_dat.h). We can retrieve it by calling OBJ_txt2nid(NAME)
