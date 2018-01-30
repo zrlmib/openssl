@@ -120,6 +120,7 @@
 #endif
 #include <openssl/ocsp.h>
 #include <openssl/rand.h>
+#include <openssl/oqs_sig.h>
 #include "ssl_locl.h"
 
 const char tls1_version_str[] = "TLSv1" OPENSSL_VERSION_PTEXT;
@@ -1010,10 +1011,18 @@ static int tls1_check_cert_param(SSL *s, X509 *x, int set_ee_md)
 #  define tlsext_sigalg_ecdsa(md) md, TLSEXT_signature_ecdsa,
 # endif
 
+# ifdef OPENSSL_NO_OQS
+#  define tlsext_sigalg_oqs(md)
+                                /* */
+# else
+#  define tlsext_sigalg_oqs(md) md, TLSEXT_signature_oqs,
+# endif
+
 # define tlsext_sigalg(md) \
                 tlsext_sigalg_rsa(md) \
                 tlsext_sigalg_dsa(md) \
-                tlsext_sigalg_ecdsa(md)
+                tlsext_sigalg_ecdsa(md) \
+		tlsext_sigalg_oqs(md) /* OQS sig */
 
 static unsigned char tls12_sigalgs[] = {
 # ifndef OPENSSL_NO_SHA512
@@ -3630,7 +3639,8 @@ static tls12_lookup tls12_md[] = {
 static tls12_lookup tls12_sig[] = {
     {EVP_PKEY_RSA, TLSEXT_signature_rsa},
     {EVP_PKEY_DSA, TLSEXT_signature_dsa},
-    {EVP_PKEY_EC, TLSEXT_signature_ecdsa}
+    {EVP_PKEY_EC, TLSEXT_signature_ecdsa},
+    {NID_oqs_picnic_default, TLSEXT_signature_oqs} /* OQS sig FIXMEOQS: replace NID with EVP_PKEY_OQS?*/
 };
 
 static int tls12_find_id(int nid, tls12_lookup *table, size_t tlen)
@@ -3726,6 +3736,10 @@ static int tls12_get_pkey_idx(unsigned char sig_alg)
 # ifndef OPENSSL_NO_ECDSA
     case TLSEXT_signature_ecdsa:
         return SSL_PKEY_ECC;
+# endif
+# ifndef OPENSSL_NO_OQS /* OQS sig */
+    case TLSEXT_signature_oqs:
+      return SSL_PKEY_OQS;
 # endif
     }
     return -1;

@@ -22,7 +22,7 @@ Contents
 open-quantum-safe/openssl currently contains:
 
 - Integration of post-quantum key exchange primitives from liboqs into OpenSSL's `speed` command
-- Ciphersuites using post-quantum key exchange based on primitives from liboqs, including hybrid ciphersuites which also use ECDHE key exchange
+- Ciphersuites using post-quantum key exchange and authentication based on primitives from liboqs, including hybrid ciphersuites which also use ECDHE key exchange
 
 Our modifications are **only** for OpenSSL v1.0.2, and appear only on the [OpenSSL\_1\_0\_2-stable branch](https://github.com/open-quantum-safe/openssl/tree/OpenSSL_1_0_2-stable).
 
@@ -32,30 +32,43 @@ liboqs currently supports the following key exchange mechanisms:
 
 - `RLWE-BCNS15`: key exchange from the ring learning with errors problem (Bos, Costello, Naehrig, Stebila, *IEEE Symposium on Security & Privacy 2015*, [https://eprint.iacr.org/2014/599](https://eprint.iacr.org/2014/599))
 - `RLWE-NEWHOPE`: "NewHope": key exchange from the ring learning with errors problem (Alkim, Ducas, Pöppelmann, Schwabe, *USENIX Security 2016*, [https://eprint.iacr.org/2015/1092](https://eprint.iacr.org/2015/1092)) (using the reference C implementation of NewHope from [https://github.com/tpoeppelmann/newhope](https://github.com/tpoeppelmann/newhope))
-- `RLWE-MSRLN16`: "MSR CLN16": Longa and Naehrig NTT improvements on NewHope, [https://www.microsoft.com/en-us/research/wp-content/uploads/2016/05/RLWE-1.pdf](https://www.microsoft.com/en-us/research/wp-content/uploads/2016/05/RLWE-1.pdf)) (using the reference C implementation from [https://www.microsoft.com/en-us/research/project/lattice-cryptography-library/](https://www.microsoft.com/en-us/research/project/lattice-cryptography-library/))
+- `RLWE-MSRLN16`: "MSR LN16": Longa and Naehrig NTT improvements on NewHope, [https://www.microsoft.com/en-us/research/wp-content/uploads/2016/05/RLWE-1.pdf](https://www.microsoft.com/en-us/research/wp-content/uploads/2016/05/RLWE-1.pdf)) (using the reference C implementation from [https://www.microsoft.com/en-us/research/project/lattice-cryptography-library/](https://www.microsoft.com/en-us/research/project/lattice-cryptography-library/))
 - `LWE-FRODO-RECOMMENDED`: "Frodo": key exchange from the learning with errors problem (Bos, Costello, Ducas, Mironov, Naehrig, Nikolaenko, Raghunathan, Stebila, *ACM Conference on Computer and Communications Security 2016*, [http://eprint.iacr.org/2016/659](http://eprint.iacr.org/2016/659)); using the "recommended" parameter set
-- `SIDH-CLN16`: "SIDH": key exchange from the supersingular isogeny Diffie-Hellman problem (Costello, Longa, Naehrig, *Crypto 2016*, [https://eprint.iacr.org/2016/413](https://eprint.iacr.org/2016/413)) (using the reference C implementation from [https://www.microsoft.com/en-us/research/project/sidh-library/](https://www.microsoft.com/en-us/research/project/sidh-library/))
+- `SIDH-MSR`: "SIDH": key exchange from the supersingular isogeny Diffie-Hellman problem (Costello, Longa, Naehrig, *Crypto 2016*, [https://eprint.iacr.org/2016/413](https://eprint.iacr.org/2016/413)) (using the reference C implementation from [https://www.microsoft.com/en-us/research/project/sidh-library/](https://www.microsoft.com/en-us/research/project/sidh-library/))
 - `SIDH-IQC-REF`: key exchange from the supersingular isogeny Diffie-Hellman problem (De Feo, Jao, Plût, *J. Math. Cryptol.* 8(3):209, 2014, [https://eprint.iacr.org/2011/506](https://eprint.iacr.org/2011/506)), using a reference implementation by Javad Doliskani
 - `CODE-MCBITS`: "McBits": key exchange from the error correcting codes, specifically Niederreiter's form of McEliece public key encryption using hidden Goppa codes (Bernstein, Chou, Schwabe, *CHES 2013*, [https://eprint.iacr.org/2015/610](https://eprint.iacr.org/2015/610)), using the implementation of McBits from [https://www.win.tue.nl/~tchou/mcbits/](https://www.win.tue.nl/~tchou/mcbits/))
 - `NTRU`: NTRU: key transport using NTRU public key encryption (Hoffstein, Pipher, Silverman, *ANTS 1998*) with the EES743EP1 parameter set, wrapper around the implementation from the NTRU Open Source project [https://github.com/NTRUOpenSourceProject/NTRUEncrypt](https://github.com/NTRUOpenSourceProject/NTRUEncrypt))
-- `MLWE-KYBER`: Kyber: a CCA-secure module-lattice-based key exchange mechanism (Bos, Ducas, Kiltz, Lepoint, Lyubashevsky, Schwabe, Shanck, Stehlé, *Real World Crypto 2017*, [https://eprint.iacr.org/2017/634](https://eprint.iacr.org/2017/634)), using the reference C implementation of Kyber from [pq-crystals/kyber](https://github.com/pq-crystals/kyber)
+- `MLWE-KYBER`: Kyber: a CCA-secure module-lattice-based key exchange mechanism (Bos, Ducas, Kiltz, Lepoint, Lyubashevsky, Schwabe, Shanck, Stehlé, *Real World Crypto 2017*, [https://eprint.iacr.org/2017/634](https://eprint.iacr.org/2017/634)), using the reference C implementation of Kyber from [pq-crystals/kyber](https://github.com/pq-crystals/kyber) **TEMPORARILY COMMENTED OUT**
+
+### Authentication mechanisms
+
+liboqs currently supports the following authentication mechanisms:
+
+- `PICNIC`: Picnic: a ZK-based signature mechanism (Melissa Chase, David Derler, Steven Goldfeder, Claudio Orlandi, Sebastian Ramacher, Christian Rechberger, Daniel Slamanig, Greg Zaverucha., [https://microsoft.github.io/Picnic/](https://microsoft.github.io/Picnic/)), using the reference C implementation of Picnic from [https://github.com/IAIK/Picnic](https://github.com/IAIK/Picnic)
 
 
 ### Ciphersuites
 
 For each post-quantum key exchange primitive `X`, there are the following ciphersuites:
 
-- `X-RSA-AES128-GCM-SHA256`
-- `X-ECDSA-AES128-GCM-SHA256`
-- `X-RSA-AES256-GCM-SHA384`
-- `X-ECDSA-AES256-GCM-SHA384`
-- `X-ECDHE-RSA-AES128-GCM-SHA256`
-- `X-ECDHE-ECDSA-AES128-GCM-SHA256`
-- `X-ECDHE-RSA-AES256-GCM-SHA384`
-- `X-ECDHE-ECDSA-AES256-GCM-SHA384`
+- OQSKEX-`X-RSA-AES128-GCM-SHA256`
+- OQSKEX-`X-ECDSA-AES128-GCM-SHA256`
+- OQSKEX-`X-RSA-AES256-GCM-SHA384`
+- OQSKEX-`X-ECDSA-AES256-GCM-SHA384`
+- OQSKEX-`X-ECDHE-RSA-AES128-GCM-SHA256`
+- OQSKEX-`X-ECDHE-ECDSA-AES128-GCM-SHA256`
+- OQSKEX-`X-ECDHE-RSA-AES256-GCM-SHA384`
+- OQSKEX-`X-ECDHE-ECDSA-AES256-GCM-SHA384`
 
 There is also a "generic" ciphersuite (`X` = `GENERIC`) which uses whichever key exchange primitive is configured as the default key exchange primitive in liboqs.  It is set to `GENERIC` = `RLWE-BCNS15`, but this can be changed.
 
+The following ciphersuites using the Picnic authentication mechanisms are supported:
+- OQSKEX-LWE-FRODO-RECOMMENDED-PICNIC-AES256-GCM-SHA384
+- OQSKEX-LWE-FRODO-RECOMMENDED-ECDHE-PICNIC-AES256-GCM-SHA384
+- OQSKEX-RLWE-MSRLN16-PICNIC-AES256-GCM-SHA384
+- OQSKEX-RLWE-MSRLN16-ECDHE-PICNIC-AES256-GCM-SHA384
+- OQSKEX-SIDH-MSR-PICNIC-AES256-GCM-SHA384
+- OQSKEX-SIDH-MSR-ECDHE-PICNIC-AES256-GCM-SHA384
 
 Building
 --------
@@ -105,7 +118,7 @@ OpenSSL contains a basic TLS server (`s_server`) and TLS client (`s_client`) whi
 
 To see the list of supported ciphersuites from OQS, type:
 
-	apps/openssl ciphers OQSKEX-GENERIC:OQSKEX-GENERIC-ECDHE:OQSKEX-RLWE-BCNS15:OQSKEX-RLWE-BCNS15-ECDHE:OQSKEX-RLWE-NEWHOPE:OQSKEX-RLWE-NEWHOPE-ECDHE:OQSKEX-RLWE-MSRLN16:OQSKEX-RLWE-MSRLN16-ECDHE:OQSKEX-LWE-FRODO-RECOMMENDED:OQSKEX-LWE-FRODO-RECOMMENDED-ECDHE:OQSKEX-SIDH-CLN16:OQSKEX-SIDH-CLN16-ECDHE:OQSKEX-SIDH-IQC-REF:OQSKEX-SIDH-IQC-REF-ECDHE:OQSKEX-CODE_MCBITS:OQSKEX-CODE-MCBITS-ECDHE:OQSKEX-NTRU:OQSKEX-NTRU-ECDHE:OQSKEX-MLWE-KYBER:OQSKEX-MLWE-KYBER-ECDHE
+	apps/openssl ciphers OQSKEX-GENERIC:OQSKEX-GENERIC-ECDHE:OQSKEX-RLWE-BCNS15:OQSKEX-RLWE-BCNS15-ECDHE:OQSKEX-RLWE-NEWHOPE:OQSKEX-RLWE-NEWHOPE-ECDHE:OQSKEX-RLWE-MSRLN16:OQSKEX-RLWE-MSRLN16-ECDHE:OQSKEX-LWE-FRODO-RECOMMENDED:OQSKEX-LWE-FRODO-RECOMMENDED-ECDHE:OQSKEX-SIDH-MSR:OQSKEX-SIDH-MSR-ECDHE:OQSKEX-SIDH-IQC-REF:OQSKEX-SIDH-IQC-REF-ECDHE:OQSKEX-CODE_MCBITS:OQSKEX-CODE-MCBITS-ECDHE:OQSKEX-NTRU:OQSKEX-NTRU-ECDHE:OQSKEX-MLWE-KYBER:OQSKEX-MLWE-KYBER-ECDHE
 
 
 To run a server, we first need to generate a self-signed X.509 certificate.  Run the following command:
@@ -120,7 +133,7 @@ When done, type to combine the key and certificate (as required by `s_server`):
 
 To run a basic TLS server with all OQS ciphersuites enabled:
 
-	apps/openssl s_server -cipher OQSKEX-GENERIC:OQSKEX-GENERIC-ECDHE:OQSKEX-RLWE-BCNS15:OQSKEX-RLWE-BCNS15-ECDHE:OQSKEX-RLWE-NEWHOPE:OQSKEX-RLWE-NEWHOPE-ECDHE:OQSKEX-RLWE-MSRLN16:OQSKEX-RLWE-MSRLN16-ECDHE:OQSKEX-LWE-FRODO-RECOMMENDED:OQSKEX-LWE-FRODO-RECOMMENDED-ECDHE:OQSKEX-SIDH-CLN16:OQSKEX-SIDH-CLN16-ECDHE
+	apps/openssl s_server -cipher OQSKEX-GENERIC:OQSKEX-GENERIC-ECDHE:OQSKEX-RLWE-BCNS15:OQSKEX-RLWE-BCNS15-ECDHE:OQSKEX-RLWE-NEWHOPE:OQSKEX-RLWE-NEWHOPE-ECDHE:OQSKEX-RLWE-MSRLN16:OQSKEX-RLWE-MSRLN16-ECDHE:OQSKEX-LWE-FRODO-RECOMMENDED:OQSKEX-LWE-FRODO-RECOMMENDED-ECDHE:OQSKEX-SIDH-MSR:OQSKEX-SIDH-MSR-ECDHE
 
 In another terminal window, you can run a TLS client for any or all of the supported ciphersuites, for example:
 
@@ -134,8 +147,8 @@ In another terminal window, you can run a TLS client for any or all of the suppo
 	apps/openssl s_client -cipher OQSKEX-RLWE-MSRLN16-ECDHE
 	apps/openssl s_client -cipher OQSKEX-LWE-FRODO-RECOMMENDED
 	apps/openssl s_client -cipher OQSKEX-LWE-FRODO-RECOMMENDED-ECDHE
-	apps/openssl s_client -cipher OQSKEX-SIDH-CLN16
-	apps/openssl s_client -cipher OQSKEX-SIDH-CLN16-ECDHE
+	apps/openssl s_client -cipher OQSKEX-SIDH-MSR
+	apps/openssl s_client -cipher OQSKEX-SIDH-MSR-ECDHE
 	apps/openssl s_client -cipher OQSKEX-SIDH-IQC-REF
 	apps/openssl s_client -cipher OQSKEX-SIDH-IQC-REF-ECDHE
 	apps/openssl s_client -cipher OQSKEX-CODE-MCBITS
@@ -144,6 +157,21 @@ In another terminal window, you can run a TLS client for any or all of the suppo
 	apps/openssl s_client -cipher OQSKEX-NTRU-ECDHE
 	apps/openssl s_client -cipher OQSKEX-MLWE-KYBER
 	apps/openssl s_client -cipher OQSKEX-MLWE-KYBER-ECDHE
+
+Run the following programs to test the PQC kex+auth TLS connection.
+
+To generate a Picnic key (using a new openssl app genoqs):
+	apps/openssl genoqs -picnic -out picnic.key
+
+To generate a Picnic cert:
+	apps/openssl req -new -x509 -days 365 -sha512 -key picnic.key -out picnic.crt -subj "/C=US/L=Redmond/CN=OQStest" -config apps/openssl.cnf
+
+To test a complete (kex+auth) PQS TLS connection, start a server (where 'X' is a mechanism that supports Picnic, see above):
+	apps/openssl s_server -cipher OQSKEX-'X'-PICNIC-AES256-GCM-SHA384 -cert picnic.crt -key picnic.key -HTTP
+
+And connect to it with a client (using the same 'X' as the server):
+	apps/openssl s_client -cipher OQSKEX-'X'-PICNIC-AES256-GCM-SHA384 -connect localhost:4433
+
 
 Current status and plans
 ------------------------

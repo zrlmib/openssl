@@ -320,7 +320,7 @@
 # define SSL_kOQSKEX_RLWE_NEWHOPE 0x00004000L
 # define SSL_kOQSKEX_RLWE_MSRLN16 0x00008000L
 # define SSL_kOQSKEX_LWE_FRODO_RECOMMENDED 0x00010000L
-# define SSL_kOQSKEX_SIDH_CLN16 0x00020000L
+# define SSL_kOQSKEX_SIDH_MSR 0x00020000L
 # define SSL_kOQSKEX_SIDH_IQC_REF 0x00040000L
 # define SSL_kOQSKEX_CODE_MCBITS 0x00080000L
 # define SSL_kOQSKEX_NTRU 0x00100000L
@@ -349,6 +349,8 @@
 # define SSL_aGOST01                     0x00000200L
 /* SRP auth */
 # define SSL_aSRP                0x00000400L
+/* OQS Picnic auth */
+# define SSL_aOQSPICNIC          0x00000800L
 
 /* Bits for algorithm_enc (symmetric encryption) */
 # define SSL_DES                 0x00000001L
@@ -518,7 +520,8 @@
 # define SSL_PKEY_ECC            5
 # define SSL_PKEY_GOST94         6
 # define SSL_PKEY_GOST01         7
-# define SSL_PKEY_NUM            8
+# define SSL_PKEY_OQS            8 /* OQS sig */
+# define SSL_PKEY_NUM            9
 
 /*-
  * SSL_kRSA <- RSA_ENC | (RSA_TMP & RSA_SIGN) |

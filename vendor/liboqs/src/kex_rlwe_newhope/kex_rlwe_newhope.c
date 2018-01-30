@@ -1,10 +1,3 @@
-#if defined(WINDOWS)
-#define UNUSED
-// __attribute__ not supported in VS, is there something else I should define?
-#else
-#define UNUSED __attribute__((unused))
-#endif
-
 #include <stdlib.h>
 #include <string.h>
 #if !defined(WINDOWS)
@@ -12,12 +5,17 @@
 #include <unistd.h>
 #endif
 
+#include <oqs/common.h>
 #include <oqs/kex.h>
 #include <oqs/rand.h>
 
 #include "kex_rlwe_newhope.h"
 #include "newhope.c"
 #include "params.h"
+
+#if defined(WINDOWS)
+#define strdup _strdup // for strdup deprecation warning
+#endif
 
 OQS_KEX *OQS_KEX_rlwe_newhope_new(OQS_RAND *rand) {
 	OQS_KEX *k = malloc(sizeof(OQS_KEX));
@@ -43,6 +41,9 @@ OQS_KEX *OQS_KEX_rlwe_newhope_new(OQS_RAND *rand) {
 int OQS_KEX_rlwe_newhope_alice_0(UNUSED OQS_KEX *k, void **alice_priv, uint8_t **alice_msg, size_t *alice_msg_len) {
 
 	int ret;
+
+	*alice_priv = NULL;
+	*alice_msg = NULL;
 
 	/* allocate public/private key pair */
 	*alice_msg = malloc(NEWHOPE_SENDABYTES);
@@ -76,6 +77,9 @@ cleanup:
 int OQS_KEX_rlwe_newhope_bob(UNUSED OQS_KEX *k, const uint8_t *alice_msg, const size_t alice_msg_len, uint8_t **bob_msg, size_t *bob_msg_len, uint8_t **key, size_t *key_len) {
 
 	int ret;
+
+	*bob_msg = NULL;
+	*key = NULL;
 
 	if (alice_msg_len != NEWHOPE_SENDABYTES) {
 		goto err;
@@ -114,6 +118,8 @@ cleanup:
 int OQS_KEX_rlwe_newhope_alice_1(UNUSED OQS_KEX *k, const void *alice_priv, const uint8_t *bob_msg, const size_t bob_msg_len, uint8_t **key, size_t *key_len) {
 
 	int ret;
+
+	*key = NULL;
 
 	if (bob_msg_len != NEWHOPE_SENDBBYTES) {
 		goto err;

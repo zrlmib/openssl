@@ -1,9 +1,4 @@
-#if defined(WINDOWS)
-#define UNUSED
-// __attribute__ not supported in VS, is there something else I should define?
-#else
-#define UNUSED __attribute__((unused))
-#endif
+#ifdef ENABLE_CODE_MCBITS
 
 #include <stdlib.h>
 #include <string.h>
@@ -12,11 +7,16 @@
 #include <unistd.h>
 #endif
 
+#include <oqs/common.h>
 #include <oqs/kex.h>
 #include <oqs/rand.h>
 
 #include "kex_code_mcbits.h"
 #include "mcbits.h"
+
+#if defined(WINDOWS)
+#define strdup _strdup // for strdup deprecation warning
+#endif
 
 OQS_KEX *OQS_KEX_code_mcbits_new(OQS_RAND *rand) {
 	OQS_KEX *k = malloc(sizeof(OQS_KEX));
@@ -42,6 +42,9 @@ OQS_KEX *OQS_KEX_code_mcbits_new(OQS_RAND *rand) {
 int OQS_KEX_code_mcbits_alice_0(UNUSED OQS_KEX *k, void **alice_priv, uint8_t **alice_msg, size_t *alice_msg_len) {
 
 	int ret;
+
+	*alice_priv = NULL;
+	*alice_msg = NULL;
 
 	/* allocate public/private key pair */
 	*alice_msg = malloc(CRYPTO_PUBLICKEYBYTES);
@@ -73,9 +76,16 @@ cleanup:
 	return ret;
 }
 
-int OQS_KEX_code_mcbits_bob(UNUSED OQS_KEX *k, const uint8_t *alice_msg, UNUSED const size_t alice_msg_len, uint8_t **bob_msg, size_t *bob_msg_len, uint8_t **key, size_t *key_len) {
+int OQS_KEX_code_mcbits_bob(UNUSED OQS_KEX *k, const uint8_t *alice_msg, const size_t alice_msg_len, uint8_t **bob_msg, size_t *bob_msg_len, uint8_t **key, size_t *key_len) {
 
 	int ret;
+
+	*bob_msg = NULL;
+	*key = NULL;
+
+	if (alice_msg_len != CRYPTO_PUBLICKEYBYTES) {
+		goto err;
+	}
 
 	/* allocate message and session key */
 	*bob_msg = malloc(CRYPTO_BYTES + 32);
@@ -103,9 +113,15 @@ cleanup:
 	return ret;
 }
 
-int OQS_KEX_code_mcbits_alice_1(UNUSED OQS_KEX *k, const void *alice_priv, const uint8_t *bob_msg, UNUSED const size_t bob_msg_len, uint8_t **key, size_t *key_len) {
+int OQS_KEX_code_mcbits_alice_1(UNUSED OQS_KEX *k, const void *alice_priv, const uint8_t *bob_msg, const size_t bob_msg_len, uint8_t **key, size_t *key_len) {
 
 	int ret;
+
+	*key = NULL;
+
+	if (bob_msg_len != (CRYPTO_BYTES + 32)) {
+		goto err;
+	}
 
 	/* allocate session key */
 	*key = malloc(32);
@@ -142,3 +158,5 @@ void OQS_KEX_code_mcbits_free(OQS_KEX *k) {
 	}
 	free(k);
 }
+
+#endif

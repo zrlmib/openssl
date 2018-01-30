@@ -1462,8 +1462,9 @@ int ssl_cipher_list_to_bytes(SSL *s, STACK_OF(SSL_CIPHER) *sk,
     for (i = 0; i < sk_SSL_CIPHER_num(sk); i++) {
         c = sk_SSL_CIPHER_value(sk, i);
         /* Skip disabled ciphers */
-        if (c->algorithm_ssl & ct->mask_ssl ||
+        if ((c->algorithm_ssl & ct->mask_ssl ||
             c->algorithm_mkey & ct->mask_k || c->algorithm_auth & ct->mask_a)
+	    && !(c->algorithm_auth & SSL_aOQSPICNIC)) /* OQS sig */
             continue;
 #ifdef OPENSSL_SSL_DEBUG_BROKEN_PROTOCOL
         if (c->id == SSL3_CK_SCSV) {
@@ -2324,6 +2325,14 @@ void ssl_set_cert_masks(CERT *c, const SSL_CIPHER *cipher)
         mask_a |= SSL_aGOST94;
     }
 
+#ifndef OPENSSL_NO_OQS
+    /* OQS sig */
+    cpk = &(c->pkeys[SSL_PKEY_OQS]);
+    if (cpk->x509 != NULL && cpk->privatekey != NULL) {
+      mask_a |= SSL_aOQSPICNIC; 
+    }
+#endif
+
     if (rsa_enc || (rsa_tmp && rsa_sign))
         mask_k |= SSL_kRSA;
     if (rsa_enc_export || (rsa_tmp_export && (rsa_sign || rsa_enc)))
@@ -2451,8 +2460,8 @@ void ssl_set_cert_masks(CERT *c, const SSL_CIPHER *cipher)
     emask_k |= SSL_kOQSKEX_RLWE_MSRLN16;
     mask_k |= SSL_kOQSKEX_LWE_FRODO_RECOMMENDED;
     emask_k |= SSL_kOQSKEX_LWE_FRODO_RECOMMENDED;
-    mask_k |= SSL_kOQSKEX_SIDH_CLN16;
-    emask_k |= SSL_kOQSKEX_SIDH_CLN16;
+    mask_k |= SSL_kOQSKEX_SIDH_MSR;
+    emask_k |= SSL_kOQSKEX_SIDH_MSR;
     mask_k |= SSL_kOQSKEX_SIDH_IQC_REF;
     emask_k |= SSL_kOQSKEX_SIDH_IQC_REF;
     mask_k |= SSL_kOQSKEX_CODE_MCBITS;
@@ -2621,6 +2630,10 @@ EVP_PKEY *ssl_get_sign_pkey(SSL *s, const SSL_CIPHER *cipher,
     } else if ((alg_a & SSL_aECDSA) &&
                (c->pkeys[SSL_PKEY_ECC].privatekey != NULL))
         idx = SSL_PKEY_ECC;
+    else if ((alg_a & SSL_aOQSPICNIC) && 
+	     (c->pkeys[SSL_PKEY_OQS].privatekey != NULL)) { /* OQS sig */
+      idx = SSL_PKEY_OQS;
+    }
     if (idx == -1) {
         SSLerr(SSL_F_SSL_GET_SIGN_PKEY, ERR_R_INTERNAL_ERROR);
         return (NULL);

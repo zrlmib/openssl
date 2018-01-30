@@ -1,10 +1,3 @@
-#if defined(WINDOWS)
-#define UNUSED
-// __attribute__ not supported in VS, is there something else I should define?
-#else
-#define UNUSED __attribute__((unused))
-#endif
-
 #include <stdlib.h>
 #include <string.h>
 #if !defined(WINDOWS)
@@ -20,6 +13,10 @@
 #include "local.h"
 
 #include "rlwe_a.h"
+
+#if defined(WINDOWS)
+#define strdup _strdup // for strdup deprecation warning
+#endif
 
 OQS_KEX *OQS_KEX_rlwe_bcns15_new(OQS_RAND *rand) {
 
@@ -81,6 +78,7 @@ err:
 	ret = 0;
 	free(alice_msg_32);
 	OQS_MEM_secure_free(*alice_priv, 1024 * sizeof(uint32_t));
+	*alice_priv = NULL;
 
 cleanup:
 	return ret;
@@ -130,6 +128,7 @@ int OQS_KEX_rlwe_bcns15_bob(OQS_KEX *k, const uint8_t *alice_msg, const size_t a
 err:
 	ret = 0;
 	free(*bob_msg);
+	*bob_msg = NULL;
 	OQS_MEM_secure_free(key_64, 16 * sizeof(uint64_t));
 
 cleanup:

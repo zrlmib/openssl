@@ -1,12 +1,5 @@
 #ifndef DISABLE_NTRU_ON_WINDOWS_BY_DEFAULT
 
-#if defined(WINDOWS)
-#define UNUSED
-// __attribute__ not supported in VS
-#else
-#define UNUSED __attribute__((unused))
-#endif
-
 #include <fcntl.h>
 #if defined(WINDOWS)
 #include <windows.h>
@@ -15,11 +8,16 @@
 #include <unistd.h>
 #endif
 
+#include <oqs/common.h>
 #include <oqs/kex.h>
 #include <oqs/kex_ntru.h>
 #include <oqs/rand.h>
 
 #include <ntru_crypto.h>
+
+#if defined(WINDOWS)
+#define strdup _strdup // for strdup deprecation warning
+#endif
 
 #define NTRU_PARAMETER_SELECTION NTRU_EES743EP1
 #define NTRU_PARAMETER_SELECTION_NAME "EES743EP1"
@@ -74,15 +72,19 @@ int OQS_KEX_ntru_alice_0(UNUSED OQS_KEX *k, void **alice_priv, uint8_t **alice_m
 	DRBG_HANDLE drbg;
 	OQS_KEX_ntru_alice_priv *ntru_alice_priv = NULL;
 
+	*alice_priv = NULL;
+	*alice_msg = NULL;
+
 	/* initialize NTRU DRBG */
 	rc = ntru_crypto_drbg_instantiate(256, (uint8_t *) "OQS Alice", strlen("OQS Alice"), (ENTROPY_FN) &get_entropy_from_dev_urandom, &drbg);
 	if (rc != DRBG_OK)
-		goto err;
+		return 0;
 
 	/* allocate private key */
 	ntru_alice_priv = malloc(sizeof(OQS_KEX_ntru_alice_priv));
 	if (ntru_alice_priv == NULL)
 		goto err;
+	ntru_alice_priv->priv_key = NULL;
 	*alice_priv = ntru_alice_priv;
 
 	/* calculate length of public/private keys */
@@ -115,7 +117,9 @@ err:
 	if (ntru_alice_priv != NULL)
 		free(ntru_alice_priv->priv_key);
 	free(ntru_alice_priv);
+	*alice_priv = NULL;
 	free(*alice_msg);
+	*alice_msg = NULL;
 cleanup:
 	ntru_crypto_drbg_uninstantiate(drbg);
 
@@ -134,7 +138,7 @@ int OQS_KEX_ntru_bob(OQS_KEX *k, const uint8_t *alice_msg, const size_t alice_ms
 	/* initialize NTRU DRBG */
 	rc = ntru_crypto_drbg_instantiate(256, (uint8_t *) "OQS Bob", strlen("OQS Bob"), (ENTROPY_FN) &get_entropy_from_dev_urandom, &drbg);
 	if (rc != DRBG_OK)
-		goto err;
+		return 0;
 
 	/* generate random session key */
 	*key_len = 256 / 8;
@@ -166,8 +170,10 @@ int OQS_KEX_ntru_bob(OQS_KEX *k, const uint8_t *alice_msg, const size_t alice_ms
 
 err:
 	ret = 0;
-	free(key);
-	free(bob_msg);
+	free(*bob_msg);
+	*bob_msg = NULL;
+	free(*key);
+	*key = NULL;
 cleanup:
 	ntru_crypto_drbg_uninstantiate(drbg);
 
@@ -206,7 +212,8 @@ int OQS_KEX_ntru_alice_1(UNUSED OQS_KEX *k, const void *alice_priv, const uint8_
 
 err:
 	ret = 0;
-	free(key);
+	free(*key);
+	*key = NULL;
 cleanup:
 
 	return ret;
