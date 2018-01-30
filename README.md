@@ -51,24 +51,25 @@ liboqs currently supports the following authentication mechanisms:
 
 For each post-quantum key exchange primitive `X`, there are the following ciphersuites:
 
-- OQSKEX-`X-RSA-AES128-GCM-SHA256`
-- OQSKEX-`X-ECDSA-AES128-GCM-SHA256`
-- OQSKEX-`X-RSA-AES256-GCM-SHA384`
-- OQSKEX-`X-ECDSA-AES256-GCM-SHA384`
-- OQSKEX-`X-ECDHE-RSA-AES128-GCM-SHA256`
-- OQSKEX-`X-ECDHE-ECDSA-AES128-GCM-SHA256`
-- OQSKEX-`X-ECDHE-RSA-AES256-GCM-SHA384`
-- OQSKEX-`X-ECDHE-ECDSA-AES256-GCM-SHA384`
+- `OQSKEX-X-RSA-AES128-GCM-SHA256`
+- `OQSKEX-X-ECDSA-AES128-GCM-SHA256`
+- `OQSKEX-X-RSA-AES256-GCM-SHA384`
+- `OQSKEX-X-ECDSA-AES256-GCM-SHA384`
+- `OQSKEX-X-ECDHE-RSA-AES128-GCM-SHA256`
+- `OQSKEX-X-ECDHE-ECDSA-AES128-GCM-SHA256`
+- `OQSKEX-X-ECDHE-RSA-AES256-GCM-SHA384`
+- `OQSKEX-X-ECDHE-ECDSA-AES256-GCM-SHA384`
 
 There is also a "generic" ciphersuite (`X` = `GENERIC`) which uses whichever key exchange primitive is configured as the default key exchange primitive in liboqs.  It is set to `GENERIC` = `RLWE-BCNS15`, but this can be changed.
 
 The following ciphersuites using the Picnic authentication mechanisms are supported:
-- OQSKEX-LWE-FRODO-RECOMMENDED-PICNIC-AES256-GCM-SHA384
-- OQSKEX-LWE-FRODO-RECOMMENDED-ECDHE-PICNIC-AES256-GCM-SHA384
-- OQSKEX-RLWE-MSRLN16-PICNIC-AES256-GCM-SHA384
-- OQSKEX-RLWE-MSRLN16-ECDHE-PICNIC-AES256-GCM-SHA384
-- OQSKEX-SIDH-MSR-PICNIC-AES256-GCM-SHA384
-- OQSKEX-SIDH-MSR-ECDHE-PICNIC-AES256-GCM-SHA384
+
+- `OQSKEX-LWE-FRODO-RECOMMENDED-PICNIC-AES256-GCM-SHA384`
+- `OQSKEX-LWE-FRODO-RECOMMENDED-ECDHE-PICNIC-AES256-GCM-SHA384`
+- `OQSKEX-RLWE-MSRLN16-PICNIC-AES256-GCM-SHA384`
+- `OQSKEX-RLWE-MSRLN16-ECDHE-PICNIC-AES256-GCM-SHA384`
+- `OQSKEX-SIDH-MSR-PICNIC-AES256-GCM-SHA384`
+- `OQSKEX-SIDH-MSR-ECDHE-PICNIC-AES256-GCM-SHA384`
 
 Building
 --------
@@ -161,16 +162,20 @@ In another terminal window, you can run a TLS client for any or all of the suppo
 Run the following programs to test the PQC kex+auth TLS connection.
 
 To generate a Picnic key (using a new openssl app genoqs):
+
 	apps/openssl genoqs -picnic -out picnic.key
 
 To generate a Picnic cert:
+
 	apps/openssl req -new -x509 -days 365 -sha512 -key picnic.key -out picnic.crt -subj "/C=US/L=Redmond/CN=OQStest" -config apps/openssl.cnf
 
-To test a complete (kex+auth) PQS TLS connection, start a server (where 'X' is a mechanism that supports Picnic, see above):
-	apps/openssl s_server -cipher OQSKEX-'X'-PICNIC-AES256-GCM-SHA384 -cert picnic.crt -key picnic.key -HTTP
+To test a complete (kex+auth) PQS TLS connection, start a server (where X is a mechanism that supports Picnic, see above):
 
-And connect to it with a client (using the same 'X' as the server):
-	apps/openssl s_client -cipher OQSKEX-'X'-PICNIC-AES256-GCM-SHA384 -connect localhost:4433
+	apps/openssl s_server -cipher OQSKEX-X-PICNIC-AES256-GCM-SHA384 -cert picnic.crt -key picnic.key -HTTP
+
+And connect to it with a client (using the same X as the server):
+
+	apps/openssl s_client -cipher OQSKEX-X-PICNIC-AES256-GCM-SHA384 -connect localhost:4433
 
 
 Current status and plans
@@ -178,9 +183,11 @@ Current status and plans
 
 Our initial launch of the liboqs integration into OpenSSL was on August 25, 2016.  
 
-At this point, there are no plans to add further functionality to the OpenSSL integration, beyond supporting additional algorithms added by liboqs.  See the [liboqs](https://github.com/open-quantum-safe/liboqs/#current-status-and-plans) page for more information about liboqs plans.  Update: we realize there is interest in quantum-safe signature integration in OpenSSL, and will consider this when we begin to add signature schemes to liboqs; volunteers welcome!
+At this point, there are no plans to add further functionality to the OpenSSL integration, beyond supporting additional algorithms added by liboqs.  See the [liboqs](https://github.com/open-quantum-safe/liboqs/#current-status-and-plans) page for more information about liboqs plans.  
 
 We will endeavour to regularly sync our branch with commits in the original openssl/openssl repository.
+
+In 2018 we plan to switch development to OpenSSL 1.1.0.
 
 For future reference, adding new algorithms/ciphersuites can easily be done by following these diffs:
 
@@ -205,3 +212,12 @@ The Open Quantum Safe project is lead by [Michele Mosca](http://faculty.iqc.uwat
 ### Support
 
 Development of Open Quantum Safe has been supported in part by the Tutte Institute for Mathematics and Computing.  Research projects which developed specific components of Open Quantum Safe have been supported by various research grants; see the source papers for funding acknowledgements.
+
+### Contributors
+
+Contributors to the liboqs fork of OpenSSL include:
+
+- Kevin Kane (Microsoft)
+- Tancrède Lepoint (SRI)
+- Shravan Mishra (University of Waterloo)
+- Christian Paquin (Microsoft Research)
