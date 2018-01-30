@@ -208,6 +208,14 @@ $shlibp=($shlib)?".dll":".lib";
 $lfile='/out:';
 
 $shlib_ex_obj="";
+if ($FLAVOR =~ /WIN64A/) {
+  $shlib_ex_obj='vendor\\liboqs\\VisualStudio\\x64\\Debug\\oqs.lib';
+} elsif ($FLAVOR =~ /WIN32/) {
+  $shlib_ex_obj='vendor\\liboqs\\VisualStudio\\Win32\\Debug\\oqs.lib';
+} else {
+  print "Warning: Unsupported OQS flavor selected. Link step may not succeed!";
+}
+ 
 $app_ex_obj="setargv.obj" if ($FLAVOR !~ /CE/);
 if ($FLAVOR =~ /WIN64A/) {
 	if (`nasm -v 2>NUL` =~ /NASM version ([0-9]+\.[0-9]+)/ && $1 >= 2.0) {
