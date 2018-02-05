@@ -15,7 +15,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\src\crypto\rand\test_rand.c">
+    <ClCompile Include="..\..\src\kex\minimal_kex_oqs.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
