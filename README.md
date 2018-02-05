@@ -69,7 +69,8 @@ This will generate:
 - `test_aes`: A simple test harness for AES.  This will test the correctness of the C implementation (and of the AES-NI implementation, if not disabled) of AES, and will compare the speed of these implementations against OpenSSL's AES implementation.
 - `test_kex`: A simple test harness for the default key exchange algorithm.  This will output key exchange messages; indicate whether the parties agree on the session key or not over a large number of trials; and measure the distance of the sessions keys from uniform using statistical distance.
 - `test_sig`: A simple test harness for the signature algorithms.
-
+- `minimal_kex_oqs`: A minimal runnable example showing the usage of KEX API.
+- `minimal_sig_oqs`: A minimal runnable example showing the usage of SIG API.
 ### Running
 
 To run the tests, simply type:
@@ -170,7 +171,11 @@ Flags for all the configured algorithms are generated in config.h file.
 Building and running on Windows
 -------------------------------
 
-Windows binaries can be generated using the Visual Studio solution in the VisualStudio folder.  Builds have been tested on Windows 10.
+Windows binaries can be generated using the Visual Studio solution in the VisualStudio folder. Builds have been tested on Windows 10.
+
+CMake (https://cmake.org/download/) is required and must be installed before building the Visual Studio solution.
+
+The supported schemes are defined in the projects' winconfig.h file.
 
 McBits is disabled by default in the Visual Studio build; follow these steps to enable it:
 
@@ -178,8 +183,6 @@ McBits is disabled by default in the Visual Studio build; follow these steps to 
 - Add `ENABLE_CODE_MCBITS` and `SODIUM_STATIC` to the preprocessor definitions of the `oqs` and `test_kex` projects.
 - Add the sodium "src/include" location to the "Additional Include Directories" in the oqs project C properties.
 - Add the libsodium library to the "Additional Dependencies" in the `test_kex` project Linker properties.
-
-Picnic is not currently supported in the Visual Studio build.
 
 Building for Android
 --------------------
