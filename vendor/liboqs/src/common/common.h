@@ -1,10 +1,19 @@
 #ifndef __OQS_COMMON_H
 #define __OQS_COMMON_H
 
+#include <stdint.h>
 #include <stdlib.h>
 
-#define OQS_SUCCESS 1
-#define OQS_ERROR 0
+typedef enum {
+	OQS_ERROR = -1,
+	OQS_SUCCESS = 0
+} OQS_STATUS;
+
+/* Displays hexadecimal strings */
+void OQS_print_hex_string(const char *label, const uint8_t *str, size_t len);
+
+/* Partially displays hexadecimal strings */
+void OQS_print_part_hex_string(const char *label, const uint8_t *str, size_t len, size_t sub_len);
 
 void OQS_MEM_cleanse(void *ptr, size_t len);
 void OQS_MEM_secure_free(void *ptr, size_t len);
@@ -16,7 +25,7 @@ void OQS_MEM_secure_free(void *ptr, size_t len);
 #define eprintf(...) fprintf(stderr, __VA_ARGS__);
 #endif
 
-#if defined(WINDOWS)
+#if defined(_WIN32)
 #define UNUSED
 // __attribute__ not supported in VS
 #else

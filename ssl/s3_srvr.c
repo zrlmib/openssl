@@ -1922,7 +1922,7 @@ int ssl3_send_server_key_exchange(SSL *s)
 
 
 
-                if (OQS_KEX_alice_0(s->s3->tmp.oqskex_kex, &(s->s3->tmp.oqskex_priv), &oqskex_srvr_msg, &oqskex_srvr_msg_len) != 1) {
+                if (OQS_KEX_alice_0(s->s3->tmp.oqskex_kex, &(s->s3->tmp.oqskex_priv), &oqskex_srvr_msg, &oqskex_srvr_msg_len) != OQS_SUCCESS) {
                     SSLerr(SSL_F_SSL3_SEND_SERVER_KEY_EXCHANGE,ERR_R_INTERNAL_ERROR);
                     goto err;
                 }
@@ -2003,7 +2003,7 @@ int ssl3_send_server_key_exchange(SSL *s)
 
 
 
-            if (OQS_KEX_alice_0(s->s3->tmp.oqskex_kex, &(s->s3->tmp.oqskex_priv), &oqskex_srvr_msg, &oqskex_srvr_msg_len) != 1) {
+            if (OQS_KEX_alice_0(s->s3->tmp.oqskex_kex, &(s->s3->tmp.oqskex_priv), &oqskex_srvr_msg, &oqskex_srvr_msg_len) != OQS_SUCCESS) {
                 SSLerr(SSL_F_SSL3_SEND_SERVER_KEY_EXCHANGE,ERR_R_INTERNAL_ERROR);
                 goto err;
             }
@@ -3027,7 +3027,7 @@ int ssl3_get_client_key_exchange(SSL *s)
 
 #ifndef OPENSSL_NO_HYBRID_OQSKEX_ECDHE
         if ((alg_k & SSL_kOQSKEX_GENERIC) || (alg_k & SSL_kOQSKEX_RLWE_BCNS15) || (alg_k & SSL_kOQSKEX_RLWE_NEWHOPE) || (alg_k & SSL_kOQSKEX_RLWE_MSRLN16) || (alg_k & SSL_kOQSKEX_LWE_FRODO_RECOMMENDED) || (alg_k & SSL_kOQSKEX_SIDH_MSR) || (alg_k & SSL_kOQSKEX_SIDH_IQC_REF) || (alg_k & SSL_kOQSKEX_CODE_MCBITS) || (alg_k & SSL_kOQSKEX_NTRU) /*|| (alg_k & SSL_kOQSKEX_MLWE_KYBER)*/) {
-            if (OQS_KEX_alice_1(s->s3->tmp.oqskex_kex, s->s3->tmp.oqskex_priv, clnt_oqskex_msg, clnt_oqskex_msg_len, &pprime_oqskex, &nprime_oqskex) != 1) {
+            if (OQS_KEX_alice_1(s->s3->tmp.oqskex_kex, s->s3->tmp.oqskex_priv, clnt_oqskex_msg, clnt_oqskex_msg_len, &pprime_oqskex, &nprime_oqskex) != OQS_SUCCESS) {
                 SSLerr(SSL_F_SSL3_GET_CLIENT_KEY_EXCHANGE, ERR_R_INTERNAL_ERROR);
                 goto err;
             }
@@ -3080,7 +3080,7 @@ int ssl3_get_client_key_exchange(SSL *s)
         memcpy(clnt_oqskex_msg, p, clnt_oqskex_msg_len);
         p += clnt_oqskex_msg_len;
 
-        if (OQS_KEX_alice_1(s->s3->tmp.oqskex_kex, s->s3->tmp.oqskex_priv, clnt_oqskex_msg, clnt_oqskex_msg_len, &pprime_oqskex, &nprime_oqskex) != 1) {
+        if (OQS_KEX_alice_1(s->s3->tmp.oqskex_kex, s->s3->tmp.oqskex_priv, clnt_oqskex_msg, clnt_oqskex_msg_len, &pprime_oqskex, &nprime_oqskex) != OQS_SUCCESS) {
             SSLerr(SSL_F_SSL3_GET_CLIENT_KEY_EXCHANGE, ERR_R_INTERNAL_ERROR);
             goto err;
         }

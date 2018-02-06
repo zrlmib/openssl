@@ -35,6 +35,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\src\common\oqs.h" />
     <ClInclude Include="..\..\src\common\common.h" />
     <ClInclude Include="..\..\src\crypto\aes\aes.h" />
     <ClInclude Include="..\..\src\crypto\aes\aes_local.h" />
@@ -65,7 +66,9 @@
     <ClInclude Include="..\..\src\kex_sidh_msr\sha3\fips202.h" />
     <ClInclude Include="..\..\src\kex_sidh_msr\windows_undef.h" />
     <ClInclude Include="..\..\src\sig\sig.h" />
+    <ClInclude Include="..\..\src\sig_picnic\external\picnic.h" />
     <ClInclude Include="..\..\src\sig_picnic\sig_picnic.h" />
+    <ClInclude Include="..\winconfig.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\src\common\common.c" />
@@ -206,13 +209,25 @@
     <OutDir>$(SolutionDir)$(Platform)\$(Configuration)\</OutDir>
     <IntDir>$(Platform)\$(Configuration)\</IntDir>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <LibraryPath>$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(NETFXKitsDir)Lib\um\x64;$(SolutionDir)..\src\sig_picnic\external\msbuild\Release\;</LibraryPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='DebugDLL|x64'">
+    <LibraryPath>$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(NETFXKitsDir)Lib\um\x64;$(SolutionDir)..\src\sig_picnic\external\msbuild\Release\;</LibraryPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <LibraryPath>$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(NETFXKitsDir)Lib\um\x64;$(SolutionDir)..\src\sig_picnic\external\msbuild\Release\;</LibraryPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">
+    <LibraryPath>$(VC_LibraryPath_x64);$(WindowsSDK_LibraryPath_x64);$(NETFXKitsDir)Lib\um\x64;$(SolutionDir)..\src\sig_picnic\external\msbuild\Release\;</LibraryPath>
+  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <PrecompiledHeader>
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>inline=__inline;DISABLE_NTRU_ON_WINDOWS_BY_DEFAULT;AES_DISABLE_NI;OQS_RAND_DEFAULT_URANDOM_CHACHA20;OQS_KEX_DEFAULT_BCNS15;CONSTANT_TIME;WINDOWS;WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>inline=__inline;DISABLE_NTRU_ON_WINDOWS_BY_DEFAULT;AES_DISABLE_NI;OQS_RAND_DEFAULT_URANDOM_CHACHA20;OQS_KEX_DEFAULT_BCNS15;CONSTANT_TIME;WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>false</SDLCheck>
       <AdditionalIncludeDirectories>$(SolutionDir)include</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
@@ -223,6 +238,8 @@
     <PreBuildEvent>
       <Command>mkdir "$(SolutionDir)include\oqs"
 del /Q "$(SolutionDir)include\oqs\*.*"
+copy "$(SolutionDir)winconfig.h" "$(SolutionDir)include\oqs\"
+copy "$(SolutionDir)..\src\common\oqs.h" "$(SolutionDir)include\oqs\"
 copy "$(SolutionDir)..\src\common\common.h" "$(SolutionDir)include\oqs\"
 copy "$(SolutionDir)..\src\crypto\aes\aes.h" "$(SolutionDir)include\oqs\"
 copy "$(SolutionDir)..\src\crypto\rand\rand.h" "$(SolutionDir)include\oqs\"
@@ -248,7 +265,7 @@ copy "$(SolutionDir)..\src\sig_picnic\sig_picnic.h" "$(SolutionDir)include\oqs\"
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>inline=__inline;DISABLE_NTRU_ON_WINDOWS_BY_DEFAULT;AES_DISABLE_NI;OQS_RAND_DEFAULT_URANDOM_CHACHA20;OQS_KEX_DEFAULT_BCNS15;CONSTANT_TIME;WINDOWS;WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>inline=__inline;DISABLE_NTRU_ON_WINDOWS_BY_DEFAULT;AES_DISABLE_NI;OQS_RAND_DEFAULT_URANDOM_CHACHA20;OQS_KEX_DEFAULT_BCNS15;CONSTANT_TIME;WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>false</SDLCheck>
       <AdditionalIncludeDirectories>$(SolutionDir)include</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
@@ -260,6 +277,8 @@ copy "$(SolutionDir)..\src\sig_picnic\sig_picnic.h" "$(SolutionDir)include\oqs\"
     <PreBuildEvent>
       <Command>mkdir "$(SolutionDir)include\oqs"
 del /Q "$(SolutionDir)include\oqs\*.*"
+copy "$(SolutionDir)winconfig.h" "$(SolutionDir)include\oqs\"
+copy "$(SolutionDir)..\src\common\oqs.h" "$(SolutionDir)include\oqs\"
 copy "$(SolutionDir)..\src\common\common.h" "$(SolutionDir)include\oqs\"
 copy "$(SolutionDir)..\src\crypto\aes\aes.h" "$(SolutionDir)include\oqs\"
 copy "$(SolutionDir)..\src\crypto\rand\rand.h" "$(SolutionDir)include\oqs\"
@@ -285,11 +304,11 @@ copy "$(SolutionDir)..\src\sig_picnic\sig_picnic.h" "$(SolutionDir)include\oqs\"
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>inline=__inline;_CRT_NONSTDC_NO_DEPRECATE;_CRT_SECURE_NO_DEPRECATE;_CRT_SECURE_NO_WARNINGS;DISABLE_NTRU_ON_WINDOWS_BY_DEFAULT;OQS_RAND_DEFAULT_URANDOM_CHACHA20;OQS_KEX_DEFAULT_BCNS15;CONSTANT_TIME;WINDOWS;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>inline=__inline;PICNIC_STATIC;PICNIC_STATIC_DEFINE;_CRT_NONSTDC_NO_DEPRECATE;_CRT_SECURE_NO_DEPRECATE;_CRT_SECURE_NO_WARNINGS;DISABLE_NTRU_ON_WINDOWS_BY_DEFAULT;OQS_RAND_DEFAULT_URANDOM_CHACHA20;OQS_KEX_DEFAULT_BCNS15;CONSTANT_TIME;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>false</SDLCheck>
       <AdditionalIncludeDirectories>$(SolutionDir)include</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
-      <TreatWarningAsError>true</TreatWarningAsError>
+      <TreatWarningAsError>false</TreatWarningAsError>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -297,6 +316,8 @@ copy "$(SolutionDir)..\src\sig_picnic\sig_picnic.h" "$(SolutionDir)include\oqs\"
     <PreBuildEvent>
       <Command>mkdir "$(SolutionDir)include\oqs"
 del /Q "$(SolutionDir)include\oqs\*.*"
+copy "$(SolutionDir)winconfig.h" "$(SolutionDir)include\oqs\"
+copy "$(SolutionDir)..\src\common\oqs.h" "$(SolutionDir)include\oqs\"
 copy "$(SolutionDir)..\src\common\common.h" "$(SolutionDir)include\oqs\"
 copy "$(SolutionDir)..\src\crypto\aes\aes.h" "$(SolutionDir)include\oqs\"
 copy "$(SolutionDir)..\src\crypto\rand\rand.h" "$(SolutionDir)include\oqs\"
@@ -313,7 +334,10 @@ copy "$(SolutionDir)..\src\kex_ntru\kex_ntru.h" "$(SolutionDir)include\oqs\"
 copy "$(SolutionDir)..\src\kex_sidh_msr\kex_sidh_msr.h" "$(SolutionDir)include\oqs\"
 copy "$(SolutionDir)..\src\sig\sig.h" "$(SolutionDir)include\oqs\"
 copy "$(SolutionDir)..\src\sig_picnic\sig_picnic.h" "$(SolutionDir)include\oqs\"
-</Command>
+mkdir "$(SolutionDir)..\src\sig_picnic\external\msbuild"
+cd "$(SolutionDir)..\src\sig_picnic\external\msbuild"
+cmake -G "Visual Studio 15 2017 Win64" "$(SolutionDir)..\src\sig_picnic\external\"
+msbuild  /t:Rebuild /p:Configuration=Release;Platform=x64 "$(SolutionDir)..\src\sig_picnic\external\msbuild\picnic.sln"</Command>
     </PreBuildEvent>
     <Lib>
       <AdditionalOptions>/ignore:4006 %(AdditionalOptions)</AdditionalOptions>
@@ -325,19 +349,22 @@ copy "$(SolutionDir)..\src\sig_picnic\sig_picnic.h" "$(SolutionDir)include\oqs\"
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>inline=__inline;_CRT_NONSTDC_NO_DEPRECATE;_CRT_SECURE_NO_DEPRECATE;_CRT_SECURE_NO_WARNINGS;DISABLE_NTRU_ON_WINDOWS_BY_DEFAULT;OQS_RAND_DEFAULT_URANDOM_CHACHA20;OQS_KEX_DEFAULT_BCNS15;CONSTANT_TIME;WINDOWS;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>inline=__inline;_CRT_NONSTDC_NO_DEPRECATE;_CRT_SECURE_NO_DEPRECATE;_CRT_SECURE_NO_WARNINGS;DISABLE_NTRU_ON_WINDOWS_BY_DEFAULT;OQS_RAND_DEFAULT_URANDOM_CHACHA20;OQS_KEX_DEFAULT_BCNS15;CONSTANT_TIME;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>false</SDLCheck>
       <AdditionalIncludeDirectories>$(SolutionDir)include</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
-      <TreatWarningAsError>true</TreatWarningAsError>
+      <TreatWarningAsError>false</TreatWarningAsError>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <ModuleDefinitionFile>dll.def</ModuleDefinitionFile>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;libpicnic.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PreBuildEvent>
       <Command>mkdir "$(SolutionDir)include\oqs"
 del /Q "$(SolutionDir)include\oqs\*.*"
+copy "$(SolutionDir)winconfig.h" "$(SolutionDir)include\oqs\"
+copy "$(SolutionDir)..\src\common\oqs.h" "$(SolutionDir)include\oqs\"
 copy "$(SolutionDir)..\src\common\common.h" "$(SolutionDir)include\oqs\"
 copy "$(SolutionDir)..\src\crypto\aes\aes.h" "$(SolutionDir)include\oqs\"
 copy "$(SolutionDir)..\src\crypto\rand\rand.h" "$(SolutionDir)include\oqs\"
@@ -354,7 +381,10 @@ copy "$(SolutionDir)..\src\kex_ntru\kex_ntru.h" "$(SolutionDir)include\oqs\"
 copy "$(SolutionDir)..\src\kex_sidh_msr\kex_sidh_msr.h" "$(SolutionDir)include\oqs\"
 copy "$(SolutionDir)..\src\sig\sig.h" "$(SolutionDir)include\oqs\"
 copy "$(SolutionDir)..\src\sig_picnic\sig_picnic.h" "$(SolutionDir)include\oqs\"
-</Command>
+mkdir "$(SolutionDir)..\src\sig_picnic\external\msbuild"
+cd "$(SolutionDir)..\src\sig_picnic\external\msbuild"
+cmake -G "Visual Studio 15 2017 Win64" "$(SolutionDir)..\src\sig_picnic\external\"
+msbuild  /t:Rebuild /p:Configuration=Release;Platform=x64 "$(SolutionDir)..\src\sig_picnic\external\msbuild\picnic.sln"</Command>
     </PreBuildEvent>
     <Lib>
       <AdditionalOptions>/ignore:4006 %(AdditionalOptions)</AdditionalOptions>
@@ -368,7 +398,7 @@ copy "$(SolutionDir)..\src\sig_picnic\sig_picnic.h" "$(SolutionDir)include\oqs\"
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>inline=__inline;DISABLE_NTRU_ON_WINDOWS_BY_DEFAULT;AES_DISABLE_NI;OQS_RAND_DEFAULT_URANDOM_CHACHA20;OQS_KEX_DEFAULT_BCNS15;CONSTANT_TIME;WINDOWS;WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>inline=__inline;DISABLE_NTRU_ON_WINDOWS_BY_DEFAULT;AES_DISABLE_NI;OQS_RAND_DEFAULT_URANDOM_CHACHA20;OQS_KEX_DEFAULT_BCNS15;CONSTANT_TIME;WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>false</SDLCheck>
       <AdditionalIncludeDirectories>$(SolutionDir)include</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
@@ -381,6 +411,8 @@ copy "$(SolutionDir)..\src\sig_picnic\sig_picnic.h" "$(SolutionDir)include\oqs\"
     <PreBuildEvent>
       <Command>mkdir "$(SolutionDir)include\oqs"
 del /Q "$(SolutionDir)include\oqs\*.*"
+copy "$(SolutionDir)winconfig.h" "$(SolutionDir)include\oqs\"
+copy "$(SolutionDir)..\src\common\oqs.h" "$(SolutionDir)include\oqs\"
 copy "$(SolutionDir)..\src\common\common.h" "$(SolutionDir)include\oqs\"
 copy "$(SolutionDir)..\src\crypto\aes\aes.h" "$(SolutionDir)include\oqs\"
 copy "$(SolutionDir)..\src\crypto\rand\rand.h" "$(SolutionDir)include\oqs\"
@@ -408,7 +440,7 @@ copy "$(SolutionDir)..\src\sig_picnic\sig_picnic.h" "$(SolutionDir)include\oqs\"
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>inline=__inline;DISABLE_NTRU_ON_WINDOWS_BY_DEFAULT;AES_DISABLE_NI;OQS_RAND_DEFAULT_URANDOM_CHACHA20;OQS_KEX_DEFAULT_BCNS15;CONSTANT_TIME;WINDOWS;WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>inline=__inline;DISABLE_NTRU_ON_WINDOWS_BY_DEFAULT;AES_DISABLE_NI;OQS_RAND_DEFAULT_URANDOM_CHACHA20;OQS_KEX_DEFAULT_BCNS15;CONSTANT_TIME;WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>false</SDLCheck>
       <AdditionalIncludeDirectories>$(SolutionDir)include</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
@@ -422,6 +454,8 @@ copy "$(SolutionDir)..\src\sig_picnic\sig_picnic.h" "$(SolutionDir)include\oqs\"
     <PreBuildEvent>
       <Command>mkdir "$(SolutionDir)include\oqs"
 del /Q "$(SolutionDir)include\oqs\*.*"
+copy "$(SolutionDir)winconfig.h" "$(SolutionDir)include\oqs\"
+copy "$(SolutionDir)..\src\common\oqs.h" "$(SolutionDir)include\oqs\"
 copy "$(SolutionDir)..\src\common\common.h" "$(SolutionDir)include\oqs\"
 copy "$(SolutionDir)..\src\crypto\aes\aes.h" "$(SolutionDir)include\oqs\"
 copy "$(SolutionDir)..\src\crypto\rand\rand.h" "$(SolutionDir)include\oqs\"
@@ -449,11 +483,11 @@ copy "$(SolutionDir)..\src\sig_picnic\sig_picnic.h" "$(SolutionDir)include\oqs\"
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>inline=__inline;_CRT_NONSTDC_NO_DEPRECATE;_CRT_SECURE_NO_DEPRECATE;_CRT_SECURE_NO_WARNINGS;DISABLE_NTRU_ON_WINDOWS_BY_DEFAULT;OQS_RAND_DEFAULT_URANDOM_CHACHA20;OQS_KEX_DEFAULT_BCNS15;CONSTANT_TIME;WINDOWS;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>inline=__inline;PICNIC_STATIC;PICNIC_STATIC_DEFINE;_CRT_NONSTDC_NO_DEPRECATE;_CRT_SECURE_NO_DEPRECATE;_CRT_SECURE_NO_WARNINGS;DISABLE_NTRU_ON_WINDOWS_BY_DEFAULT;OQS_RAND_DEFAULT_URANDOM_CHACHA20;OQS_KEX_DEFAULT_BCNS15;CONSTANT_TIME;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>false</SDLCheck>
       <AdditionalIncludeDirectories>$(SolutionDir)include</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
-      <TreatWarningAsError>true</TreatWarningAsError>
+      <TreatWarningAsError>false</TreatWarningAsError>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -463,6 +497,8 @@ copy "$(SolutionDir)..\src\sig_picnic\sig_picnic.h" "$(SolutionDir)include\oqs\"
     <PreBuildEvent>
       <Command>mkdir "$(SolutionDir)include\oqs"
 del /Q "$(SolutionDir)include\oqs\*.*"
+copy "$(SolutionDir)winconfig.h" "$(SolutionDir)include\oqs\"
+copy "$(SolutionDir)..\src\common\oqs.h" "$(SolutionDir)include\oqs\"
 copy "$(SolutionDir)..\src\common\common.h" "$(SolutionDir)include\oqs\"
 copy "$(SolutionDir)..\src\crypto\aes\aes.h" "$(SolutionDir)include\oqs\"
 copy "$(SolutionDir)..\src\crypto\rand\rand.h" "$(SolutionDir)include\oqs\"
@@ -479,7 +515,10 @@ copy "$(SolutionDir)..\src\kex_ntru\kex_ntru.h" "$(SolutionDir)include\oqs\"
 copy "$(SolutionDir)..\src\kex_sidh_msr\kex_sidh_msr.h" "$(SolutionDir)include\oqs\"
 copy "$(SolutionDir)..\src\sig\sig.h" "$(SolutionDir)include\oqs\"
 copy "$(SolutionDir)..\src\sig_picnic\sig_picnic.h" "$(SolutionDir)include\oqs\"
-</Command>
+mkdir "$(SolutionDir)..\src\sig_picnic\external\msbuild"
+cd "$(SolutionDir)..\src\sig_picnic\external\msbuild"
+cmake -G "Visual Studio 15 2017 Win64" "$(SolutionDir)..\src\sig_picnic\external\"
+msbuild  /t:Rebuild /p:Configuration=Release;Platform=x64 "$(SolutionDir)..\src\sig_picnic\external\msbuild\picnic.sln"</Command>
     </PreBuildEvent>
     <Lib>
       <AdditionalOptions>/ignore:4006 %(AdditionalOptions)</AdditionalOptions>
@@ -493,21 +532,24 @@ copy "$(SolutionDir)..\src\sig_picnic\sig_picnic.h" "$(SolutionDir)include\oqs\"
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>inline=__inline;_CRT_NONSTDC_NO_DEPRECATE;_CRT_SECURE_NO_DEPRECATE;_CRT_SECURE_NO_WARNINGS;DISABLE_NTRU_ON_WINDOWS_BY_DEFAULT;OQS_RAND_DEFAULT_URANDOM_CHACHA20;OQS_KEX_DEFAULT_BCNS15;CONSTANT_TIME;WINDOWS;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>inline=__inline;_CRT_NONSTDC_NO_DEPRECATE;_CRT_SECURE_NO_DEPRECATE;_CRT_SECURE_NO_WARNINGS;DISABLE_NTRU_ON_WINDOWS_BY_DEFAULT;OQS_RAND_DEFAULT_URANDOM_CHACHA20;OQS_KEX_DEFAULT_BCNS15;CONSTANT_TIME;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>false</SDLCheck>
       <AdditionalIncludeDirectories>$(SolutionDir)include</AdditionalIncludeDirectories>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
-      <TreatWarningAsError>true</TreatWarningAsError>
+      <TreatWarningAsError>false</TreatWarningAsError>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <ModuleDefinitionFile>dll.def</ModuleDefinitionFile>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;libpicnic.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PreBuildEvent>
       <Command>mkdir "$(SolutionDir)include\oqs"
 del /Q "$(SolutionDir)include\oqs\*.*"
+copy "$(SolutionDir)winconfig.h" "$(SolutionDir)include\oqs\"
+copy "$(SolutionDir)..\src\common\oqs.h" "$(SolutionDir)include\oqs\"
 copy "$(SolutionDir)..\src\common\common.h" "$(SolutionDir)include\oqs\"
 copy "$(SolutionDir)..\src\crypto\aes\aes.h" "$(SolutionDir)include\oqs\"
 copy "$(SolutionDir)..\src\crypto\rand\rand.h" "$(SolutionDir)include\oqs\"
@@ -524,7 +566,10 @@ copy "$(SolutionDir)..\src\kex_ntru\kex_ntru.h" "$(SolutionDir)include\oqs\"
 copy "$(SolutionDir)..\src\kex_sidh_msr\kex_sidh_msr.h" "$(SolutionDir)include\oqs\"
 copy "$(SolutionDir)..\src\sig\sig.h" "$(SolutionDir)include\oqs\"
 copy "$(SolutionDir)..\src\sig_picnic\sig_picnic.h" "$(SolutionDir)include\oqs\"
-</Command>
+mkdir "$(SolutionDir)..\src\sig_picnic\external\msbuild"
+cd "$(SolutionDir)..\src\sig_picnic\external\msbuild"
+cmake -G "Visual Studio 15 2017 Win64" "$(SolutionDir)..\src\sig_picnic\external\"
+msbuild  /t:Rebuild /p:Configuration=Release;Platform=x64 "$(SolutionDir)..\src\sig_picnic\external\msbuild\picnic.sln"</Command>
     </PreBuildEvent>
     <Lib>
       <AdditionalOptions>/ignore:4006 %(AdditionalOptions)</AdditionalOptions>

@@ -124,7 +124,7 @@ int pkey_oqs_sign(EVP_PKEY_CTX *ctx, unsigned char *sig, size_t *siglen,
     return 0;
   }
 
-  if (OQS_SIG_sign(oqs_ctx->s, oqs_ctx->sk, tbs, tbslen, sig, siglen) != 1) {
+  if (OQS_SIG_sign(oqs_ctx->s, oqs_ctx->sk, tbs, tbslen, sig, siglen) != OQS_SUCCESS) {
     OQSerr(0, ERR_R_FATAL);
     return 0;
   }
@@ -142,7 +142,7 @@ int pkey_oqs_verify(EVP_PKEY_CTX *ctx,
     return 0;
   }
 
-  if (OQS_SIG_verify(oqs_ctx->s, oqs_ctx->pk, tbs, tbslen, sig, siglen) != 1) {
+  if (OQS_SIG_verify(oqs_ctx->s, oqs_ctx->pk, tbs, tbslen, sig, siglen) != OQS_SUCCESS) {
     OQSerr(0, ERR_R_FATAL);
     return 0;
   }
@@ -219,7 +219,7 @@ int pkey_oqs_keygen(EVP_PKEY_CTX *ctx, EVP_PKEY *pkey)
   if (!oqs_ctx || !oqs_ctx->s || !oqs_ctx->sk || !oqs_ctx->pk ) {
     goto err;
   }
-  if (OQS_SIG_keygen(oqs_ctx->s, oqs_ctx->sk, oqs_ctx->pk) != 1) {
+  if (OQS_SIG_keygen(oqs_ctx->s, oqs_ctx->sk, oqs_ctx->pk) != OQS_SUCCESS) {
     goto err;
   }
 

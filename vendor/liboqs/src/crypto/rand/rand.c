@@ -1,7 +1,7 @@
 #include <assert.h>
 #include <stdio.h>
 #include <math.h>
-#if defined(WINDOWS)
+#if defined(_WIN32)
 #include <windows.h>
 #include <Wincrypt.h>
 #else
@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #endif
 
+#include <oqs/common.h>
 #include <oqs/rand.h>
 #include <oqs/rand_urandom_aesctr.h>
 #include <oqs/rand_urandom_chacha20.h>
@@ -49,7 +50,7 @@ void OQS_RAND_free(OQS_RAND *r) {
 	}
 }
 
-#if !defined(WINDOWS)
+#if !defined(_WIN32)
 /* For some reason specifying inline results in a build error */
 inline
 #endif
@@ -143,10 +144,10 @@ void OQS_RAND_report_statistics(const unsigned long occurrences[256], const char
 	return;
 }
 
-int OQS_RAND_get_system_entropy(uint8_t *buf, size_t n) {
-	int result = 0;
+OQS_STATUS OQS_RAND_get_system_entropy(uint8_t *buf, size_t n) {
+	OQS_STATUS result = OQS_ERROR;
 
-#if !defined(WINDOWS)
+#if !defined(_WIN32)
 	int fd = 0;
 #endif
 
@@ -154,7 +155,7 @@ int OQS_RAND_get_system_entropy(uint8_t *buf, size_t n) {
 		goto err;
 	}
 
-#if defined(WINDOWS)
+#if defined(_WIN32)
 	HCRYPTPROV hCryptProv;
 	if (!CryptAcquireContext(&hCryptProv, NULL, NULL, PROV_RSA_FULL, CRYPT_VERIFYCONTEXT) ||
 	    !CryptGenRandom(hCryptProv, (DWORD) n, buf)) {
@@ -170,10 +171,10 @@ int OQS_RAND_get_system_entropy(uint8_t *buf, size_t n) {
 		goto err;
 	}
 #endif
-	result = 1;
+	result = OQS_SUCCESS;
 
 err:
-#if !defined(WINDOWS)
+#if !defined(_WIN32)
 	if (fd > 0) {
 		close(fd);
 	}

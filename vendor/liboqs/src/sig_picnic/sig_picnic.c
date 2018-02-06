@@ -1,11 +1,12 @@
+#include <oqs/sig.h>
+
 #ifdef ENABLE_SIG_PICNIC
 
 #include <string.h>
 #include <oqs/common.h>
-#include <oqs/sig.h>
 #include <oqs/rand.h>
 #include "sig_picnic.h"
-#include "picnic.h"
+#include "external/picnic.h"
 
 static char *Picnic_L1_FS_name = "Picnic_L1_FS";
 static char *Picnic_L1_UR_name = "Picnic_L1_UR";
@@ -42,7 +43,7 @@ typedef struct PICNIC_CTX {
 	picnic_params_t params;
 } PICNIC_CTX;
 
-int OQS_SIG_picnic_get(OQS_SIG *s, enum OQS_SIG_algid algid) {
+OQS_STATUS OQS_SIG_picnic_get(OQS_SIG *s, enum OQS_SIG_algid algid) {
 	if (s == NULL) {
 		return OQS_ERROR;
 	}
@@ -98,9 +99,9 @@ int OQS_SIG_picnic_get(OQS_SIG *s, enum OQS_SIG_algid algid) {
 	}
 	// set the ctx, sizes, and API functions
 	s->ctx = pctx;
-	s->priv_key_len = PRIV_KEY_LEN[pctx->params] + PUB_KEY_LEN[pctx->params]; // priv key also contains pub key
-	s->pub_key_len = PUB_KEY_LEN[pctx->params];
-	s->max_sig_len = SIG_LEN[pctx->params];
+	s->priv_key_len = (uint16_t)(PRIV_KEY_LEN[pctx->params] + PUB_KEY_LEN[pctx->params]); // priv key also contains pub key
+	s->pub_key_len = (uint16_t) PUB_KEY_LEN[pctx->params];
+	s->max_sig_len = (uint32_t) SIG_LEN[pctx->params];
 	s->keygen = &OQS_SIG_picnic_keygen;
 	s->sign = &OQS_SIG_picnic_sign;
 	s->verify = &OQS_SIG_picnic_verify;
@@ -108,7 +109,7 @@ int OQS_SIG_picnic_get(OQS_SIG *s, enum OQS_SIG_algid algid) {
 	return OQS_SUCCESS;
 }
 
-int OQS_SIG_picnic_keygen(const OQS_SIG *s, uint8_t *priv, uint8_t *pub) {
+OQS_STATUS OQS_SIG_picnic_keygen(const OQS_SIG *s, uint8_t *priv, uint8_t *pub) {
 	if (s == NULL || priv == NULL || pub == NULL) {
 		return OQS_ERROR;
 	}
@@ -116,7 +117,7 @@ int OQS_SIG_picnic_keygen(const OQS_SIG *s, uint8_t *priv, uint8_t *pub) {
 	picnic_privatekey_t sk;
 	picnic_params_t parameters = ((PICNIC_CTX *) s->ctx)->params;
 	int ret = picnic_keygen(parameters, &pk, &sk);
-	if (ret != 0) {
+	if (ret != 0) { // DO NOT modify this return code to OQS_SUCCESS/OQS_ERROR
 		return OQS_ERROR;
 	}
 	// serialize the public key
@@ -135,7 +136,7 @@ int OQS_SIG_picnic_keygen(const OQS_SIG *s, uint8_t *priv, uint8_t *pub) {
 	return OQS_SUCCESS;
 }
 
-int OQS_SIG_picnic_sign(const OQS_SIG *s, const uint8_t *priv, const uint8_t *msg, const size_t msg_len, uint8_t *sig, size_t *sig_len) {
+OQS_STATUS OQS_SIG_picnic_sign(const OQS_SIG *s, const uint8_t *priv, const uint8_t *msg, const size_t msg_len, uint8_t *sig, size_t *sig_len) {
 	if (s == NULL || priv == NULL || msg == NULL || sig == NULL || sig_len == NULL) {
 		return OQS_ERROR;
 	}
@@ -151,7 +152,7 @@ int OQS_SIG_picnic_sign(const OQS_SIG *s, const uint8_t *priv, const uint8_t *ms
 	return OQS_SUCCESS;
 }
 
-int OQS_SIG_picnic_verify(UNUSED const OQS_SIG *s, const uint8_t *pub, const uint8_t *msg, const size_t msg_len, const uint8_t *sig, const size_t sig_len) {
+OQS_STATUS OQS_SIG_picnic_verify(UNUSED const OQS_SIG *s, const uint8_t *pub, const uint8_t *msg, const size_t msg_len, const uint8_t *sig, const size_t sig_len) {
 	if (pub == NULL || msg == NULL || sig == NULL) {
 		return OQS_ERROR;
 	}
