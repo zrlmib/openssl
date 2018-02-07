@@ -13,7 +13,7 @@ AR=		ar r
 CFLAGS= $(INCLUDES) $(CFLAG)
 
 GENERAL=Makefile
-TEST=oqstest.c
+TEST=
 APPS=
 
 LIB=$(TOP)/libcrypto.a

@@ -22,8 +22,6 @@ local $zlib_opt = 0;	# 0 = no zlib, 1 = static, 2 = dynamic
 local $zlib_lib = "";
 local $perl_asm = 0;	# 1 to autobuild asm files from perl scripts
 
-my $ex_l_libs = "oqs.lib";
-
 # Options to import from top level Makefile
 
 my %mf_import = (
@@ -338,6 +336,13 @@ $INSTALLTOP =~ s|/|$o|g;
 $OPENSSLDIR =~ s|/|$o|g;
 
 # Build OQS
+if ($debug eq "1") {
+$vsconfig = "Debug";
+}
+else {
+$vsconfig = "Release";
+}
+
 if ($platform eq "VC-WIN32") {
 $vsplatform = "x86";
 $vsplatformdir = "Win32";
@@ -346,14 +351,13 @@ elsif (($platform eq "VC-WIN64A") || ($platform eq "VC-WIN64I"))  {
 $vsplatform = "x64";
 $vsplatformdir = "x64";
 }
-if ($debug = "1") {
-$vsconfig = "Debug";
+$libpath_ex = "/libpath:vendor${o}liboqs${o}VisualStudio${o}$vsplatformdir${o}$vsconfig";
+$OQSVSBUILD = "msbuild vendor${o}liboqs${o}VisualStudio${o}liboqs.sln /clp:ErrorsOnly /p:Configuration=$vsconfig;Platform=$vsplatform";
+$ex_l_libs = "oqs.lib";
+if (($platform eq "VC-WIN64A") || ($platform eq "VC-WIN64I"))  {
+    $ex_l_libs .= " Bcrypt.lib";
 }
-else {
-$vsconfig = "Release";
-}
-$OQSVSBUILD = "msbuild vendor${o}liboqs${o}VisualStudio${o}liboqs.sln /p:Configuration=$vsconfig;Platform=$vsplatform /t:rebuild";
-
+    
 #############################################
 # We parse in input file and 'store' info for later printing.
 open(IN,"<$infile") || die "unable to open $infile:$!\n";
@@ -503,7 +507,7 @@ EX_LIBS=$ex_libs
 SRC_D=$src_dir
 
 LINK_CMD=$link
-LFLAGS=$lflags /libpath:vendor${o}liboqs${o}VisualStudio${o}$vsplatformdir${o}$vsconfig
+LFLAGS=$lflags $libpath_ex
 RSC=$rsc
 
 # The output directory for everything interesting
@@ -539,7 +543,7 @@ FIPSLINK=\$(PERL) \$(FIPSDIR)${o}bin${o}fipslink.pl
 
 # OQS headers
 LIBOQS_INCLUDE = vendor${o}liboqs${o}VisualStudio${o}include${o}oqs
-LIBOQS_HEADER = kex.h kex_rlwe_bcns15.h rand.h rand_urandom_chacha20.h
+LIBOQS_HEADER = kex_code_mcbits.h kex_lwe_frodo.h kex_ntru.h kex_rlwe_bcns15.h kex_rlwe_msrln16.h kex_rlwe_newhope.h kex_sidh_msr.h oqs.h rand.h rand_urandom_aesctr.h rand_urandom_chacha20.h sha3.h sig.h sig_picnic.h winconfig.h 
 
 ######################################################
 # You should not need to touch anything below this point

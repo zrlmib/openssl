@@ -126,6 +126,7 @@
 #  include <openssl/ocsp.h>
 # endif
 # include <openssl/ossl_typ.h>
+# include <openssl/oqs_sig.h>
 
 int app_RAND_load_file(const char *file, BIO *bio_e, int dont_warn);
 int app_RAND_write_file(const char *file, BIO *bio_e);

@@ -86,6 +86,7 @@ my @known_algorithms = ( "RC2", "RC4", "RC5", "IDEA", "DES", "BF",
 			 "SHA256", "SHA512", "RIPEMD",
 			 "MDC2", "WHIRLPOOL", "RSA", "DSA", "DH", "EC", "ECDH", "ECDSA", "EC2M",
 			 "HMAC", "AES", "CAMELLIA", "SEED", "GOST",
+			 "OQS",
 			 # EC_NISTP_64_GCC_128
 			 "EC_NISTP_64_GCC_128",
 			 # Envelope "algorithms"
@@ -148,6 +149,7 @@ my $no_rfc3779; my $no_psk; my $no_tlsext; my $no_cms; my $no_capieng;
 my $no_jpake; my $no_srp; my $no_ssl2; my $no_ec2m; my $no_nistp_gcc; 
 my $no_nextprotoneg; my $no_sctp; my $no_srtp; my $no_ssl_trace;
 my $no_unit_test; my $no_ssl3_method; my $no_ssl2_method;
+my $no_oqs;
 
 my $fips;
 
@@ -251,6 +253,7 @@ foreach (@ARGV, split(/ /, $options))
 	elsif (/^no-sctp$/)	{ $no_sctp=1; }
 	elsif (/^no-srtp$/)	{ $no_srtp=1; }
 	elsif (/^no-unit-test$/){ $no_unit_test=1; }
+	elsif (/^no-oqs$/){ $no_oqs=1; }
 	}
 
 
@@ -356,6 +359,7 @@ $crypto.=" crypto/cms/cms.h";
 $crypto.=" crypto/jpake/jpake.h";
 $crypto.=" crypto/modes/modes.h";
 $crypto.=" crypto/srp/srp.h";
+$crypto.=" crypto/oqs/oqs_sig.h";
 
 my $symhacks="crypto/symhacks.h";
 
@@ -1228,6 +1232,7 @@ sub is_valid
 			if ($keyword eq "SRTP" && $no_srtp) { return 0; }
 			if ($keyword eq "UNIT_TEST" && $no_unit_test) { return 0; }
 			if ($keyword eq "DEPRECATED" && $no_deprecated) { return 0; }
+			if ($keyword eq "OQS" && $no_oqs) { return 0; }
 
 			# Nothing recognise as true
 			return 1;
