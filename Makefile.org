@@ -279,7 +279,7 @@ build_all: build_libs build_apps build_tests build_tools
 build_libs: build_liboqs build_libcrypto build_libssl openssl.pc
 
 build_liboqs:
-	cd vendor/liboqs && autoreconf -i && ./configure && $(MAKE)
+	cd vendor/liboqs && autoreconf -i && ./configure --enable-shared && $(MAKE)
 
 build_libcrypto: build_crypto build_engines libcrypto.pc
 build_libssl: build_ssl libssl.pc
@@ -358,6 +358,16 @@ do_$(SHLIB_TARGET):
 	@ set -e; libs='-L. $(SHLIBDEPS)'; for i in $(SHLIBDIRS); do \
 		if [ "$$i" = "ssl" -a -n "$(LIBKRB5)" ]; then \
 			libs="$(LIBKRB5) $$libs"; \
+		else \
+			echo 'merging oqs into crypto'; \
+			mkdir -p temp; \
+			cd temp; \
+			ar x ../libcrypto.a; \
+			ar x ../vendor/liboqs/liboqs.a; \
+			ar qc libcryptocombined.a *.o; \
+			cd ..; \
+			mv temp/libcryptocombined.a libcrypto.a; \
+			rm -rf temp; \
 		fi; \
 		$(CLEARENV) && $(MAKE) -f Makefile.shared -e $(BUILDENV) \
 			LIBNAME=$$i LIBVERSION=$(SHLIB_MAJOR).$(SHLIB_MINOR) \
@@ -584,7 +594,13 @@ install_sw:
 	chmod 644 $(INSTALL_PREFIX)$(INSTALLTOP)/include/openssl/$$i ); \
 	done;
 	cp include/oqs/*.h $(INSTALL_PREFIX)$(INSTALLTOP)/include/oqs
-	cp -p vendor/liboqs/liboqs.a $(INSTALL_PREFIX)$(INSTALLTOP)/lib
+	mkdir -p tmp
+	cd tmp && ar x ../libcrypto.a
+	cd tmp && ar x ../vendor/liboqs/liboqs.a
+	cd tmp && ar rcs ../libcryptocombined.a *.o
+	$(RANLIB) libcryptocombined.a
+	rm -rf tmp
+	cp libcryptocombined.a $(INSTALL_PREFIX)$(INSTALLTOP)/$(LIBDIR)/libcrypto.a
 	@set -e; target=install; $(RECURSIVE_BUILD_CMD)
 	@set -e; liblist="$(LIBS)"; for i in $$liblist ;\
 	do \
@@ -643,13 +659,6 @@ install_sw:
 	chmod 644 $(INSTALL_PREFIX)$(INSTALLTOP)/$(LIBDIR)/pkgconfig/libssl.pc
 	cp openssl.pc $(INSTALL_PREFIX)$(INSTALLTOP)/$(LIBDIR)/pkgconfig
 	chmod 644 $(INSTALL_PREFIX)$(INSTALLTOP)/$(LIBDIR)/pkgconfig/openssl.pc
-	mkdir -p tmp
-	cd tmp && ar x ../libcrypto.a
-	cd tmp && ar x ../vendor/liboqs/liboqs.a
-	cd tmp && ar rcs ../libcryptocombined.a *.o
-	$(RANLIB) libcryptocombined.a
-	rm -rf tmp
-	cp libcryptocombined.a $(INSTALL_PREFIX)$(INSTALLTOP)/$(LIBDIR)/libcrypto.a
 
 install_html_docs:
 	here="`pwd`"; \
