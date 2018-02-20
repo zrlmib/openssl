@@ -20,13 +20,14 @@ extern "C" {
 // #define NID_oqs_... (other OQS algs)
   
 /* Adds the OQS algorithm. Should be called after add OPENSSL_add_all_algorithms */
-void OQS_add_all_algorithms();
+int OQS_add_all_algorithms(void);
 
-/* Shuts down OQS */
-void OQS_shutdown();
+/* Shuts down OQS. */
+int OQS_shutdown(void);
 
 #ifdef  __cplusplus
 }
 #endif
 
 #endif
+

@@ -6,8 +6,8 @@
 #include <openssl/pem.h>
 #include <openssl/ssl.h>
 
-#include "crypto/evp/evp_locl.h" /* in openssl/ */
-#include "crypto/asn1/asn1_locl.h" /* in openssl/ */
+#include "../evp/evp_locl.h" /* in openssl/ */
+#include "../asn1/asn1_locl.h" /* in openssl/ */
 
 #include <oqs/rand.h>
 #include <oqs/common.h>
@@ -644,7 +644,7 @@ DEFINE_OQS_EVP_METHODS(picnic, NID_oqs_picnic_default, PicnicL1FS_With_SHA512_na
 
 /* ============================================================ */
 
-void OQS_add_all_algorithms()
+int OQS_add_all_algorithms()
 {
   /* Only initialize once (Not threadsafe FIXMEOQS) */
   if (!g_initialized) {
@@ -661,19 +661,20 @@ void OQS_add_all_algorithms()
     EVP_PKEY_meth_add0(&oqs_pkey_meth_picnic);
     if (!OBJ_create(PicnicL1FS_With_SHA512_OID, PicnicL1FS_With_SHA512_name, PicnicL1FS_With_SHA512_name)) {
       OQSerr(0, ERR_R_FATAL);
-      return;
+      return 0;
     }
     /* FIXMEOQS: should we use different NID for signid and pkey_id (1st & 3rd arg) */
     if(!OBJ_add_sigid(NID_oqs_picnic_default, NID_sha512, NID_oqs_picnic_default)) {
       OQSerr(0, ERR_R_FATAL);
-      return;
+      return 0;
     }
 
     g_initialized = 1;
+    return 1;
   }
 }
 
-void OQS_shutdown()
+int OQS_shutdown()
 {
   if (g_initialized) {
   /* OQS sig hack: calling modified versions of the following functions to free
@@ -683,5 +684,5 @@ void OQS_shutdown()
     EVP_PKEY_meth_add0(NULL);
     g_initialized = 0;
   }
-    return;
+    return 1;
 }

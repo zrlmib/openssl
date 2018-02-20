@@ -208,10 +208,19 @@ $shlibp=($shlib)?".dll":".lib";
 $lfile='/out:';
 
 $shlib_ex_obj="";
-if ($FLAVOR =~ /WIN64A/) {
-  $shlib_ex_obj='vendor\\liboqs\\VisualStudio\\x64\\Debug\\oqs.lib';
+if ($FLAVOR =~ /WIN64/) {
+    if ($debug) {
+	$shlib_ex_obj.='vendor\\liboqs\\VisualStudio\\x64\\Debug\\oqs.lib ';
+    } else {
+	$shlib_ex_obj.='vendor\\liboqs\\VisualStudio\\x64\\Release\\oqs.lib ';
+    }
+    $shlib_ex_obj.='bcrypt.lib';
 } elsif ($FLAVOR =~ /WIN32/) {
-  $shlib_ex_obj='vendor\\liboqs\\VisualStudio\\Win32\\Debug\\oqs.lib';
+    if ($debug) {
+	$shlib_ex_obj.='vendor\\liboqs\\VisualStudio\\Win32\\Debug\\oqs.lib ';
+    } else {
+	$shlib_ex_obj='vendor\\liboqs\\VisualStudio\\Win32\\Release\\oqs.lib ';
+    }
 } else {
   print "Warning: Unsupported OQS flavor selected. Link step may not succeed!";
 }
