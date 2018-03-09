@@ -279,7 +279,7 @@ build_all: build_libs build_apps build_tests build_tools
 build_libs: build_liboqs build_libcrypto build_libssl openssl.pc
 
 build_liboqs:
-	cd vendor/liboqs && autoreconf -i && ./configure --enable-shared && $(MAKE)
+	cd vendor/liboqs && autoreconf -i && CC="$(CC)" CFLAGS="$(CFLAG)" CCAS="$(AS)" CCASFLAGS="$(ASFLAG)" ./configure --enable-shared && $(MAKE)
 
 build_libcrypto: build_crypto build_engines libcrypto.pc
 build_libssl: build_ssl libssl.pc
