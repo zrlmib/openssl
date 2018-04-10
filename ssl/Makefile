@@ -15,7 +15,8 @@ KRB5_INCLUDES=
 CFLAGS= $(INCLUDES) $(CFLAG)
 
 GENERAL=Makefile README ssl-lib.com install.com
-TEST=ssltest.c heartbeat_test.c clienthellotest.c sslv2conftest.c dtlstest.c bad_dtls_test.c
+TEST=ssltest.c heartbeat_test.c clienthellotest.c sslv2conftest.c dtlstest.c \
+	bad_dtls_test.c fatalerrtest.c
 APPS=
 
 LIB=$(TOP)/libssl.a
@@ -288,23 +289,20 @@ d1_srvr.o: ../include/openssl/evp.h ../include/openssl/hmac.h
 d1_srvr.o: ../include/openssl/kssl.h ../include/openssl/lhash.h
 d1_srvr.o: ../include/openssl/md5.h ../include/openssl/obj_mac.h
 d1_srvr.o: ../include/openssl/objects.h ../include/openssl/opensslconf.h
-d1_srvr.o: ../include/openssl/opensslv.h ../include/openssl/oqs_sig.h
-d1_srvr.o: ../include/openssl/ossl_typ.h ../include/openssl/pem.h
-d1_srvr.o: ../include/openssl/pem2.h ../include/openssl/pkcs7.h
-d1_srvr.o: ../include/openssl/pqueue.h ../include/openssl/rand.h
-d1_srvr.o: ../include/openssl/rsa.h ../include/openssl/safestack.h
-d1_srvr.o: ../include/openssl/sha.h ../include/openssl/srtp.h
-d1_srvr.o: ../include/openssl/ssl.h ../include/openssl/ssl2.h
-d1_srvr.o: ../include/openssl/ssl23.h ../include/openssl/ssl3.h
-d1_srvr.o: ../include/openssl/stack.h ../include/openssl/symhacks.h
-d1_srvr.o: ../include/openssl/tls1.h ../include/openssl/x509.h
-d1_srvr.o: ../include/openssl/x509_vfy.h ../include/oqs/common.h
+d1_srvr.o: ../include/openssl/opensslv.h ../include/openssl/ossl_typ.h
+d1_srvr.o: ../include/openssl/pem.h ../include/openssl/pem2.h
+d1_srvr.o: ../include/openssl/pkcs7.h ../include/openssl/pqueue.h
+d1_srvr.o: ../include/openssl/rand.h ../include/openssl/rsa.h
+d1_srvr.o: ../include/openssl/safestack.h ../include/openssl/sha.h
+d1_srvr.o: ../include/openssl/srtp.h ../include/openssl/ssl.h
+d1_srvr.o: ../include/openssl/ssl2.h ../include/openssl/ssl23.h
+d1_srvr.o: ../include/openssl/ssl3.h ../include/openssl/stack.h
+d1_srvr.o: ../include/openssl/symhacks.h ../include/openssl/tls1.h
+d1_srvr.o: ../include/openssl/x509.h ../include/openssl/x509_vfy.h d1_srvr.c
 d1_srvr.o: ../include/oqs/kex.h ../include/oqs/rand.h ../include/oqs/sig.h
-d1_srvr.o: d1_srvr.c ssl_locl.h
-kssl.o: ../crypto/asn1/asn1_locl.h ../crypto/evp/evp_locl.h
-kssl.o: ../include/openssl/asn1.h ../include/openssl/asn1t.h
-kssl.o: ../include/openssl/bio.h ../include/openssl/buffer.h
-kssl.o: ../include/openssl/cms.h ../include/openssl/comp.h
+d1_srvr.o: ssl_locl.h
+kssl.o: ../crypto/o_time.h ../include/openssl/asn1.h ../include/openssl/bio.h
+kssl.o: ../include/openssl/buffer.h ../include/openssl/comp.h
 kssl.o: ../include/openssl/crypto.h ../include/openssl/dtls1.h
 kssl.o: ../include/openssl/e_os2.h ../include/openssl/ec.h
 kssl.o: ../include/openssl/ecdh.h ../include/openssl/ecdsa.h
