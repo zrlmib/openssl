@@ -29,7 +29,14 @@
 #include <openssl/x509.h>
 #include "internal/asn1_int.h"
 #include "internal/evp_int.h"
+/* MIB added */
+#include <openssl/cms.h>
+/* end MIB added */
+
 #include <oqs/oqs.h>
+
+/* Only supports OQS's master branch signature API for now */
+#if !defined(OQS_NIST_BRANCH)
 
 #define SIZE_OF_UINT32 4
 #define ENCODE_UINT32(pbuf, i)  (pbuf)[0] = (unsigned char)((i>>24) & 0xff); \
@@ -58,6 +65,10 @@ typedef struct
   EVP_PKEY *classical_pkey;
   /* Security bits for the scheme */
   int security_bits;
+  /* MIB added: */
+  int md_len;
+  void *md_data;
+  /* end MIB added */
 } OQS_KEY;
 
 /*
@@ -828,7 +839,7 @@ static int oqs_item_verify(EVP_MD_CTX *ctx, const ASN1_ITEM *it, void *asn,
         nid != NID_p256_qteslapi &&
         nid != NID_rsa3072_qteslapi &&
         nid != NID_qteslapiii &&
-        nid != NID_p384_qteslapiii
+        nid != NID_p384_qteslapiii 
 ///// OQS_TEMPLATE_FRAGMENT_CHECK_IF_KNOWN_NID_END
     ) || ptype != V_ASN1_UNDEF) {
         ECerr(EC_F_OQS_ITEM_VERIFY, EC_R_UNKNOWN_NID);
@@ -854,6 +865,7 @@ static int oqs_item_sign_##ALG(EVP_MD_CTX *ctx, const ASN1_ITEM *it, void *asn,\
     return 3;                                                                  \
 }
 
+/* MIB removed 
 #define DEFINE_OQS_SIGN_INFO_SET(ALG, NID_ALG) \
 static int oqs_sig_info_set_##ALG(X509_SIG_INFO *siginf, const X509_ALGOR *alg,  \
                             const ASN1_STRING *sig)                              \
@@ -862,7 +874,74 @@ static int oqs_sig_info_set_##ALG(X509_SIG_INFO *siginf, const X509_ALGOR *alg, 
                       X509_SIG_INFO_TLS);                                        \
     return 1;                                                                    \
 }
+ end MIB removed */
 
+/*MIB added */
+
+int setOQS_MD_NID(int NID_ALG) {
+   switch(NID_ALG) {
+    case NID_dilithium2:
+    case NID_dilithium3:
+    case NID_dilithium4:
+      if (getenv("ACTIVEDEBUG")) printf("Setting shake256 MD NID for alg %d\n", NID_ALG);
+      return NID_shake256;
+    }
+    return NID_undef;
+}
+
+#define DEFINE_OQS_SIGN_INFO_SET(ALG, NID_ALG) \
+static int oqs_sig_info_set_##ALG(X509_SIG_INFO *siginf, const X509_ALGOR *alg,  \
+                            const ASN1_STRING *sig)                              \
+{                                                                                \
+    X509_SIG_INFO_set(siginf, setOQS_MD_NID(NID_ALG), NID_ALG, get_oqs_security_bits(NID_ALG),\
+                      X509_SIG_INFO_TLS);                                        \
+    return 1;                                                                    \
+}
+
+int oqs_ameth_pkey_ctrl(EVP_PKEY *pkey, int op, long arg1, void *arg2) {
+   switch(EVP_PKEY_id(pkey)) {
+    case NID_dilithium2:
+    case NID_dilithium3:
+    case NID_dilithium4:
+      if (getenv("ACTIVEDEBUG")) printf("oqs_ameth_pkey_ctrl on op %d\n", op);
+      break;
+    default:
+      if (getenv("ACTIVEDEBUG")) printf("Unknown pkey type to ameth ctrl: %d; op = %d\n", EVP_PKEY_id(pkey), op);
+      ECerr(EC_F_PKEY_OQS_CTRL, ERR_R_FATAL);
+      return 0;
+   }
+
+   switch (op) {
+   case ASN1_PKEY_CTRL_DEFAULT_MD_NID:
+      if (getenv("ACTIVEDEBUG")) printf("Returning SHAKE256 as a good default Message Digest\n");
+      *(int *)arg2 = NID_shake256;
+      return 1;
+   case ASN1_PKEY_CTRL_CMS_SIGN:
+      if (getenv("ACTIVEDEBUG")) printf("ACKing indication to CTRL sign\n");
+      if (arg1 == 0) {
+            int snid, hnid;
+            X509_ALGOR *alg1, *alg2;
+            CMS_SignerInfo_get0_algs(arg2, NULL, NULL, &alg1, &alg2);
+            if (alg1 == NULL || alg1->algorithm == NULL)
+                return -1;
+            hnid = OBJ_obj2nid(alg1->algorithm);
+            if (hnid == NID_undef)
+                return -1;
+            if (!OBJ_find_sigid_by_algs(&snid, hnid, EVP_PKEY_id(pkey)))
+                return -1;
+            X509_ALGOR_set0(alg2, OBJ_nid2obj(snid), V_ASN1_UNDEF, 0);
+      }
+
+      return 1;
+   }
+   if (getenv("ACTIVEDEBUG")) printf("OQS Panic: Unexpected pkey_ameth request: %d\n", op);
+   ECerr(EC_F_PKEY_OQS_CTRL, ERR_R_FATAL);
+   return 0;
+}
+
+/* end MIB added */
+
+/* MIB removed 
 #define DEFINE_OQS_EVP_PKEY_ASN1_METHOD(ALG, NID_ALG, SHORT_NAME, LONG_NAME) \
 const EVP_PKEY_ASN1_METHOD ALG##_asn1_meth = { \
     NID_ALG,                                   \
@@ -890,6 +969,40 @@ const EVP_PKEY_ASN1_METHOD ALG##_asn1_meth = { \
     oqs_sig_info_set_##ALG,                    \
     0, 0, 0, 0, 0,                             \
 };
+ end MIB removed */
+
+/* MIB added */
+#define DEFINE_OQS_EVP_PKEY_ASN1_METHOD(ALG, NID_ALG, SHORT_NAME, LONG_NAME) \
+const EVP_PKEY_ASN1_METHOD ALG##_asn1_meth = { \
+    NID_ALG,                                   \
+    NID_ALG,                                   \
+    0,                                         \
+    SHORT_NAME,                                \
+    LONG_NAME,                                 \
+    oqs_pub_decode,                            \
+    oqs_pub_encode,                            \
+    oqs_pub_cmp,                               \
+    oqs_pub_print,                             \
+    oqs_priv_decode,                           \
+    oqs_priv_encode,                           \
+    oqs_priv_print,                            \
+    oqs_size,                                  \
+    oqs_bits,                                  \
+    oqs_security_bits,                         \
+    0, 0, 0, 0,                                \
+    oqs_cmp_parameters,                        \
+    0, 0,                                      \
+    oqs_free,                                  \
+    oqs_ameth_pkey_ctrl,                       \
+    0, 0,                                      \
+    oqs_item_verify,                           \
+    oqs_item_sign_##ALG,                       \
+    oqs_sig_info_set_##ALG,                    \
+    0, 0, 0, 0, 0,                             \
+};
+
+/* end MIB added */
+
 
 static int pkey_oqs_keygen(EVP_PKEY_CTX *ctx, EVP_PKEY *pkey)
 {
@@ -1157,15 +1270,38 @@ static int pkey_oqs_ctrl(EVP_PKEY_CTX *ctx, int type, int p1, void *p2)
         /* Only NULL allowed as digest */
         if (p2 == NULL)
             return 1;
+        /* MIB added */
+        switch(EVP_PKEY_id(EVP_PKEY_CTX_get0_pkey(ctx))) {
+         case NID_dilithium2:
+         case NID_dilithium3:
+         case NID_dilithium4:
+            if (*(int*)p2 == NID_shake256) {
+               if (getenv("ACTIVEDEBUG")) printf("TBD/Approving digest %d\n", *(int*)p2);
+               return 1;
+            }
+        }
+        /* end MIB added */
         ECerr(EC_F_PKEY_OQS_CTRL, EC_R_WRONG_DIGEST);
         return 0;
 
     case EVP_PKEY_CTRL_DIGESTINIT:
+        /* MIB added */
+        if (getenv("ACTIVEDEBUG")) printf("TBD/Do Digest Init...\n");
+        /* end MIB added */
+        return 1;
+
+    /* MIB added */
+    case EVP_PKEY_CTRL_CMS_SIGN:
+        if (getenv("ACTIVEDEBUG")) printf("TBD/Do CMS SIGN...\n");
         return 1;
     }
+    if (getenv("ACTIVEDEBUG")) printf("Unknown PKEY CTRL type: %d\n", type);
+    ECerr(EC_F_PKEY_OQS_CTRL, ERR_R_FATAL);
+    /* end MIB added */
     return -2;
 }
 
+/* MIB removed:
 #define DEFINE_OQS_EVP_PKEY_METHOD(ALG, NID_ALG)    \
 const EVP_PKEY_METHOD ALG##_pkey_meth = {           \
     NID_ALG, EVP_PKEY_FLAG_SIGCTX_CUSTOM,           \
@@ -1177,6 +1313,122 @@ const EVP_PKEY_METHOD ALG##_pkey_meth = {           \
     pkey_oqs_digestsign,                            \
     pkey_oqs_digestverify                           \
 };
+end MIB removed */
+
+/* MIB added */
+static int pkey_oqs_sign_init(EVP_PKEY_CTX *ctx) {
+   if (getenv("ACTIVEDEBUG")) printf("Sign init called\n");
+   return 1;
+}
+
+static int pkey_oqs_sign(EVP_PKEY_CTX *ctx, unsigned char *sig,
+                               size_t *siglen, const unsigned char *tbs,
+                               size_t tbslen)
+{
+   if (getenv("ACTIVEDEBUG")) printf("Sign called\n");
+   return 1;
+}
+
+static int oqs_int_update(EVP_MD_CTX *ctx, const void *data, size_t count)
+{
+    if (getenv("ACTIVEDEBUG")) printf("Doing OQS MD update for data of count %ld using MD_CTX of %lx\n", count, (unsigned long int)ctx);
+    OQS_KEY *oqs_key = (OQS_KEY*) EVP_MD_CTX_pkey_ctx(ctx)->pkey->pkey.ptr;
+
+    if (oqs_key->md_len > 0) {
+        if (getenv("ACTIVEDEBUG")) printf("OQS Panic: MD storage shouldn't be called more than once\n");
+        return 0;
+    }
+    oqs_key->md_data = OPENSSL_malloc(count);
+    if (!oqs_key->md_data) {
+      if (getenv("ACTIVEDEBUG")) printf("Couldn't allocate %ld bytes\n", count);
+      oqs_key->md_len = 0;
+      return 0;
+    }
+    memcpy(oqs_key->md_data, data, count);
+    oqs_key->md_len = count;
+    return 1;
+}
+
+static int pkey_oqs_signctx_init (EVP_PKEY_CTX *ctx, EVP_MD_CTX *mctx) {
+   if (getenv("ACTIVEDEBUG")) printf("TBD oqs signctx init called for mctx of %lx\n", (unsigned long int)mctx);
+   EVP_MD_CTX_set_flags(mctx, EVP_MD_CTX_FLAG_NO_INIT);
+   EVP_MD_CTX_set_update_fn(mctx, oqs_int_update);
+
+   return 1;
+}
+
+static int pkey_oqs_signctx(EVP_PKEY_CTX *ctx, unsigned char *sig, size_t *siglen, EVP_MD_CTX *mctx) {
+    OQS_KEY *oqs_key = (OQS_KEY*) EVP_MD_CTX_pkey_ctx(mctx)->pkey->pkey.ptr;
+    if (getenv("ACTIVEDEBUG")) printf("oqs signctx called with sig %lx and siglen %lx on mctx of %lx\n", (unsigned long int)sig, (unsigned long int)siglen, (unsigned long int)mctx);
+
+    int tbslen = oqs_key->md_len;
+    void* tbs = oqs_key->md_data;
+    if ((tbs == NULL) || (tbslen == 0)) {
+      if (getenv("ACTIVEDEBUG")) printf("WARNING: Nothing to be signed!\n");
+    }
+
+    int ret = pkey_oqs_digestsign(mctx, sig, siglen, tbs, tbslen);
+    if (getenv("ACTIVEDEBUG")) printf("digestsign for sig %lx and siglen = %ld returned with %d\n", (unsigned long int)sig, (unsigned long int)*siglen, ret);
+    if (sig != NULL) {
+       OPENSSL_free(oqs_key->md_data);
+       oqs_key->md_data = NULL;
+       oqs_key->md_len = 0;
+    }
+    else
+       EVP_MD_CTX_set_flags(mctx, EVP_MD_CTX_FLAG_FINALISE); // don't go around again...
+
+   return ret;
+}
+
+static int pkey_oqs_digestcustom(EVP_PKEY_CTX *ctx, EVP_MD_CTX *mctx) {
+   if (getenv("ACTIVEDEBUG")) printf("DigestCustom called\n");
+   return 1;
+}
+
+static int pkey_oqs_verify_init(EVP_PKEY_CTX *ctx) {
+   if (getenv("ACTIVEDEBUG")) printf("VerifyInit called\n");
+   return 1;
+}
+
+static int pkey_oqs_verify(EVP_PKEY_CTX *ctx,
+                   const unsigned char *sig, size_t siglen,
+                   const unsigned char *tbs, size_t tbslen) {
+   if (getenv("ACTIVEDEBUG")) printf("Verify called\n");
+   return 1;
+}
+static int pkey_oqs_verifyctx_init(EVP_PKEY_CTX *ctx, EVP_MD_CTX *mctx) {
+   if (getenv("ACTIVEDEBUG")) printf("VerifyCTX init called!\n");
+   EVP_MD_CTX_set_flags(mctx, EVP_MD_CTX_FLAG_NO_INIT);
+   EVP_MD_CTX_set_update_fn(mctx, oqs_int_update);
+   EVP_MD_CTX_set_flags(mctx, EVP_MD_CTX_FLAG_FINALISE); // don't go around again...
+   return 1;
+}
+
+static int pkey_oqs_verifyctx(EVP_PKEY_CTX *ctx, const unsigned char *sig, int siglen,
+                      EVP_MD_CTX *mctx) {
+   if (getenv("ACTIVEDEBUG")) printf("VerifyCTX called\n");
+   return 1;
+}
+
+#define DEFINE_OQS_EVP_PKEY_METHOD(ALG, NID_ALG)    \
+const EVP_PKEY_METHOD ALG##_pkey_meth = {           \
+    NID_ALG, EVP_PKEY_FLAG_SIGCTX_CUSTOM,           \
+    0, 0, 0, 0, 0, 0,                               \
+    pkey_oqs_keygen,                                \
+    pkey_oqs_sign_init, pkey_oqs_sign,              \
+    pkey_oqs_verify_init, pkey_oqs_verify,          \
+    0, 0,                                           \
+    pkey_oqs_signctx_init, pkey_oqs_signctx,        \
+    pkey_oqs_verifyctx_init, pkey_oqs_verifyctx,    \
+    0, 0, 0, 0, 0, 0,                               \
+    pkey_oqs_ctrl,                                  \
+    0,                                              \
+    pkey_oqs_digestsign,                            \
+    pkey_oqs_digestverify,                          \
+    0, 0, 0,                                        \
+    pkey_oqs_digestcustom                           \
+};
+/* end MIB added */
 
 #define DEFINE_OQS_EVP_METHODS(ALG, NID_ALG, SHORT_NAME, LONG_NAME)   \
 DEFINE_OQS_ITEM_SIGN(ALG, NID_ALG)                                    \
@@ -1202,3 +1454,5 @@ DEFINE_OQS_EVP_METHODS(rsa3072_qteslapi, NID_rsa3072_qteslapi, "rsa3072_qteslapi
 DEFINE_OQS_EVP_METHODS(qteslapiii, NID_qteslapiii, "qteslapiii", "OpenSSL qTESLA-p-III algorithm")
 DEFINE_OQS_EVP_METHODS(p384_qteslapiii, NID_p384_qteslapiii, "p384_qteslapiii", "OpenSSL ECDSA p384 qTESLA-p-III algorithm")
 ///// OQS_TEMPLATE_FRAGMENT_DEFINE_OQS_EVP_METHS_END
+
+#endif /* !defined(OQS_NIST_BRANCH) */
