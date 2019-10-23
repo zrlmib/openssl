@@ -46,7 +46,13 @@ fi
 
 # Get Code:
 echo "Building stable OpenSSL 1.1.1"
+
+# Get main OQS openssl:
 git clone --branch OQS-OpenSSL_1_1_1-stable https://github.com/open-quantum-safe/openssl.git
+# Activate this for CMS support:
+# git clone git@github.com:zrlmib/openssl.git
+
+# liboqs:
 git clone --branch master https://github.com/open-quantum-safe/liboqs.git
 
 # Build liboqs
