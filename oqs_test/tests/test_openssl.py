@@ -128,6 +128,19 @@ def run_connection(sig_alg, kex_alg, port):
         env={'SIGALG': sig_alg, 'KEXALG': kex_alg, 'PORT': str(port)}
     )
 
+def test_cms():
+   global sig_algs
+   for sig_alg in sig_algs:
+       yield(run_cms, sig_alg)
+
+def run_cms(sig_alg ):
+    cmd = os.path.join('oqs_test', 'scripts', 'do_openssl-cms.sh');
+    helpers.run_subprocess(
+        [cmd],
+        os.path.join('..'),
+        env={'SIGALG': sig_alg}
+    )
+
 if __name__ == '__main__':
     try:
         import nose2
