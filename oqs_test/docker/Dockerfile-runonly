@@ -1,0 +1,22 @@
+From ubuntu:18.04
+
+MAINTAINER MIB (mib@zurich.ibm.com)
+
+ENV DEBIAN_FRONTEND noninteractive
+
+RUN apt-get update -y
+RUN apt-get -y upgrade
+
+# Completely build environment inserted here:
+ADD openssl /usr/local/openssl
+RUN ln -s /usr/local/openssl/bin/openssl /usr/local/bin/
+
+# Some test scripts:
+ADD oqs-speedtest /bin/oqs-speedtest
+ADD oqs-sslserver /bin/oqs-sslserver
+ADD oqs-sslclient /bin/oqs-sslclient
+
+WORKDIR /root
+
+# For performance tests, start with docker -t <reponame> oqs-speedtest <oqs-signature-name> <oqs-kem-name>
+CMD ["openssl", "version"]
