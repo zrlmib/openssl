@@ -883,8 +883,12 @@ int setOQS_MD_NID(int NID_ALG) {
     case NID_dilithium2:
     case NID_dilithium3:
     case NID_dilithium4:
+    case NID_qteslapiii:
       if (getenv("ACTIVEDEBUG")) printf("Setting shake256 MD NID for alg %d\n", NID_ALG);
       return NID_shake256;
+    case NID_qteslapi:
+      if (getenv("ACTIVEDEBUG")) printf("Setting shake128 MD NID for alg %d\n", NID_ALG);
+      return NID_shake128;
     }
     return NID_undef;
 }
@@ -903,6 +907,8 @@ int oqs_ameth_pkey_ctrl(EVP_PKEY *pkey, int op, long arg1, void *arg2) {
     case NID_dilithium2:
     case NID_dilithium3:
     case NID_dilithium4:
+    case NID_qteslapi:
+    case NID_qteslapiii:
       if (getenv("ACTIVEDEBUG")) printf("oqs_ameth_pkey_ctrl on op %d\n", op);
       break;
     default:
@@ -913,9 +919,22 @@ int oqs_ameth_pkey_ctrl(EVP_PKEY *pkey, int op, long arg1, void *arg2) {
 
    switch (op) {
    case ASN1_PKEY_CTRL_DEFAULT_MD_NID:
-      if (getenv("ACTIVEDEBUG")) printf("Returning SHAKE256 as a good default Message Digest\n");
-      *(int *)arg2 = NID_shake256;
-      return 1;
+         switch(EVP_PKEY_id(pkey)) {
+		case NID_dilithium2:
+		case NID_dilithium3:
+		case NID_dilithium4:
+		case NID_qteslapiii:
+      			if (getenv("ACTIVEDEBUG")) printf("Returning SHAKE256 as a good default Message Digest\n");
+			*(int *)arg2 = NID_shake256;
+			return 1;
+		case NID_qteslapi:
+      			if (getenv("ACTIVEDEBUG")) printf("Returning SHAKE128 as a good default Message Digest\n");
+			*(int *)arg2 = NID_shake128;
+			return 1;
+		default:
+      			if (getenv("ACTIVEDEBUG")) printf("No default Message Digest registered for NID %d\n", EVP_PKEY_id(pkey));
+			return 0;
+	}
    case ASN1_PKEY_CTRL_CMS_SIGN:
       if (getenv("ACTIVEDEBUG")) printf("ACKing indication to CTRL sign\n");
       if (arg1 == 0) {
@@ -1275,7 +1294,13 @@ static int pkey_oqs_ctrl(EVP_PKEY_CTX *ctx, int type, int p1, void *p2)
          case NID_dilithium2:
          case NID_dilithium3:
          case NID_dilithium4:
+         case NID_qteslapiii:
             if (*(int*)p2 == NID_shake256) {
+               if (getenv("ACTIVEDEBUG")) printf("TBD/Approving digest %d\n", *(int*)p2);
+               return 1;
+            }
+	 case NID_qteslapi:
+            if (*(int*)p2 == NID_shake128) {
                if (getenv("ACTIVEDEBUG")) printf("TBD/Approving digest %d\n", *(int*)p2);
                return 1;
             }
