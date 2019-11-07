@@ -27,10 +27,10 @@ ED448		    undef	ED448
 oqsdefault	undef	oqsdefault
 p256_oqsdefault	undef	p256_oqsdefault
 rsa3072_oqsdefault	undef	rsa3072_oqsdefault
-dilithium2	shake256	dilithium2
+dilithium2	shake128	dilithium2
 p256_dilithium2	undef	p256_dilithium2
 rsa3072_dilithium2	undef	rsa3072_dilithium2
-dilithium3	shake256	dilithium3
+dilithium3	shake128	dilithium3
 dilithium4	shake256	dilithium4
 p384_dilithium4	undef	p384_dilithium4
 picnicl1fs	undef	picnicl1fs

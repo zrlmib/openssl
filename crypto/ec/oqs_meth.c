@@ -30,13 +30,13 @@
 #include "internal/asn1_int.h"
 #include "internal/evp_int.h"
 /* MIB added */
+/* just a work-around :-( XXX Get APIs reverted */
+# define EVP_MD_CTX_create()     EVP_MD_CTX_new()
+# define EVP_MD_CTX_destroy(ctx) EVP_MD_CTX_free((ctx))
 #include <openssl/cms.h>
 /* end MIB added */
 
 #include <oqs/oqs.h>
-
-/* Only supports OQS's master branch signature API for now */
-#if !defined(OQS_NIST_BRANCH)
 
 #define SIZE_OF_UINT32 4
 #define ENCODE_UINT32(pbuf, i)  (pbuf)[0] = (unsigned char)((i>>24) & 0xff); \
@@ -66,8 +66,7 @@ typedef struct
   /* Security bits for the scheme */
   int security_bits;
   /* MIB added: */
-  int md_len;
-  void *md_data;
+  EVP_MD_CTX * shake;
   /* end MIB added */
 } OQS_KEY;
 
@@ -880,12 +879,12 @@ static int oqs_sig_info_set_##ALG(X509_SIG_INFO *siginf, const X509_ALGOR *alg, 
 
 int setOQS_MD_NID(int NID_ALG) {
    switch(NID_ALG) {
-    case NID_dilithium2:
-    case NID_dilithium3:
     case NID_dilithium4:
     case NID_qteslapiii:
       if (getenv("ACTIVEDEBUG")) printf("Setting shake256 MD NID for alg %d\n", NID_ALG);
       return NID_shake256;
+    case NID_dilithium2:
+    case NID_dilithium3:
     case NID_qteslapi:
       if (getenv("ACTIVEDEBUG")) printf("Setting shake128 MD NID for alg %d\n", NID_ALG);
       return NID_shake128;
@@ -920,15 +919,15 @@ int oqs_ameth_pkey_ctrl(EVP_PKEY *pkey, int op, long arg1, void *arg2) {
    switch (op) {
    case ASN1_PKEY_CTRL_DEFAULT_MD_NID:
          switch(EVP_PKEY_id(pkey)) {
-		case NID_dilithium2:
-		case NID_dilithium3:
 		case NID_dilithium4:
 		case NID_qteslapiii:
-      			if (getenv("ACTIVEDEBUG")) printf("Returning SHAKE256 as a good default Message Digest\n");
+			if (getenv("ACTIVEDEBUG")) printf("Returning SHAKE256 as a good default Message Digest\n");
 			*(int *)arg2 = NID_shake256;
 			return 1;
+		case NID_dilithium2:
+		case NID_dilithium3:
 		case NID_qteslapi:
-      			if (getenv("ACTIVEDEBUG")) printf("Returning SHAKE128 as a good default Message Digest\n");
+			if (getenv("ACTIVEDEBUG")) printf("Returning SHAKE128 as a good default Message Digest\n");
 			*(int *)arg2 = NID_shake128;
 			return 1;
 		default:
@@ -941,13 +940,19 @@ int oqs_ameth_pkey_ctrl(EVP_PKEY *pkey, int op, long arg1, void *arg2) {
             int snid, hnid;
             X509_ALGOR *alg1, *alg2;
             CMS_SignerInfo_get0_algs(arg2, NULL, NULL, &alg1, &alg2);
-            if (alg1 == NULL || alg1->algorithm == NULL)
+            if (alg1 == NULL || alg1->algorithm == NULL) {
+                if (getenv("ACTIVEDEBUG")) printf("OQS Panic: No Alg in ameth ctrl\n");
                 return -1;
+	    }
             hnid = OBJ_obj2nid(alg1->algorithm);
-            if (hnid == NID_undef)
+            if (hnid == NID_undef) {
+                if (getenv("ACTIVEDEBUG")) printf("OQS Panic: Undef NID in ameth ctrl\n");
                 return -1;
-            if (!OBJ_find_sigid_by_algs(&snid, hnid, EVP_PKEY_id(pkey)))
+            }
+            if (!OBJ_find_sigid_by_algs(&snid, hnid, EVP_PKEY_id(pkey))) {
+                if (getenv("ACTIVEDEBUG")) printf("OQS Panic: snid not found in ameth ctrl for PKEY ID %d and hnid %d\n", EVP_PKEY_id(pkey), hnid);
                 return -1;
+            }
             X509_ALGOR_set0(alg2, OBJ_nid2obj(snid), V_ASN1_UNDEF, 0);
       }
 
@@ -1291,14 +1296,14 @@ static int pkey_oqs_ctrl(EVP_PKEY_CTX *ctx, int type, int p1, void *p2)
             return 1;
         /* MIB added */
         switch(EVP_PKEY_id(EVP_PKEY_CTX_get0_pkey(ctx))) {
-         case NID_dilithium2:
-         case NID_dilithium3:
          case NID_dilithium4:
          case NID_qteslapiii:
             if (*(int*)p2 == NID_shake256) {
                if (getenv("ACTIVEDEBUG")) printf("TBD/Approving digest %d\n", *(int*)p2);
                return 1;
             }
+         case NID_dilithium2:
+         case NID_dilithium3:
 	 case NID_qteslapi:
             if (*(int*)p2 == NID_shake128) {
                if (getenv("ACTIVEDEBUG")) printf("TBD/Approving digest %d\n", *(int*)p2);
@@ -1356,51 +1361,82 @@ static int pkey_oqs_sign(EVP_PKEY_CTX *ctx, unsigned char *sig,
 
 static int oqs_int_update(EVP_MD_CTX *ctx, const void *data, size_t count)
 {
-    if (getenv("ACTIVEDEBUG")) printf("Doing OQS MD update for data of count %ld using MD_CTX of %lx\n", count, (unsigned long int)ctx);
+    if (getenv("ACTIVEDEBUG")) printf("Doing OQS MD update for data of count %ld using MD_CTX of %lx \n", count, (unsigned long int)ctx);
+    if (getenv("ACTIVEDEBUG")) printf("(MD: %lx)\n", (unsigned long)EVP_MD_CTX_md(ctx));
     OQS_KEY *oqs_key = (OQS_KEY*) EVP_MD_CTX_pkey_ctx(ctx)->pkey->pkey.ptr;
 
-    if (oqs_key->md_len > 0) {
-        if (getenv("ACTIVEDEBUG")) printf("OQS Panic: MD storage shouldn't be called more than once\n");
-        return 0;
+    if (oqs_key->shake == NULL) {
+        if ((oqs_key->shake = EVP_MD_CTX_create()) == NULL) {
+           if (getenv("ACTIVEDEBUG")) printf("OQS panic: SHAKE MD create failed.\n");
+           return 0;
+        }
+
+        if (EVP_DigestInit_ex(oqs_key->shake, (oqs_key->security_bits>128)?EVP_shake256():EVP_shake128(), NULL) <= 0) {
+           if (getenv("ACTIVEDEBUG")) printf("OQS panic: SHAKE init failed.\n");
+           return 0;
+        }
+        if (getenv("ACTIVEDEBUG")) printf("OQS info: Init done for %lx\n", (unsigned long)oqs_key->shake);
     }
-    oqs_key->md_data = OPENSSL_malloc(count);
-    if (!oqs_key->md_data) {
-      if (getenv("ACTIVEDEBUG")) printf("Couldn't allocate %ld bytes\n", count);
-      oqs_key->md_len = 0;
-      return 0;
+
+    if (getenv("ACTIVEDEBUG")) printf("OQS info: Updating using %lx\n", (unsigned long)oqs_key->shake);
+    if(EVP_DigestUpdate(oqs_key->shake, data, count)<=0) {
+        if (getenv("ACTIVEDEBUG")) printf("OQS panic: SHAKE update failed\n");
+	return 0;
     }
-    memcpy(oqs_key->md_data, data, count);
-    oqs_key->md_len = count;
+    if (getenv("ACTIVEDEBUG")) printf("Done\n");
     return 1;
 }
 
 static int pkey_oqs_signctx_init (EVP_PKEY_CTX *ctx, EVP_MD_CTX *mctx) {
-   if (getenv("ACTIVEDEBUG")) printf("TBD oqs signctx init called for mctx of %lx\n", (unsigned long int)mctx);
-   EVP_MD_CTX_set_flags(mctx, EVP_MD_CTX_FLAG_NO_INIT);
-   EVP_MD_CTX_set_update_fn(mctx, oqs_int_update);
+    OQS_KEY *oqs_key = (OQS_KEY*) EVP_MD_CTX_pkey_ctx(mctx)->pkey->pkey.ptr;
+    if (getenv("ACTIVEDEBUG")) printf("TBD oqs signctx init called for mctx of %lx (oqs sec bits: %d)\n", (unsigned long int)mctx, oqs_key->security_bits);
 
-   return 1;
+    EVP_MD_CTX_set_flags(mctx, EVP_MD_CTX_FLAG_NO_INIT);
+    EVP_MD_CTX_set_update_fn(mctx, oqs_int_update);
+
+    return 1;
 }
 
 static int pkey_oqs_signctx(EVP_PKEY_CTX *ctx, unsigned char *sig, size_t *siglen, EVP_MD_CTX *mctx) {
     OQS_KEY *oqs_key = (OQS_KEY*) EVP_MD_CTX_pkey_ctx(mctx)->pkey->pkey.ptr;
+    unsigned char* tbs = NULL;
+    int tbslen = 0;
+
     if (getenv("ACTIVEDEBUG")) printf("oqs signctx called with sig %lx and siglen %lx on mctx of %lx\n", (unsigned long int)sig, (unsigned long int)siglen, (unsigned long int)mctx);
 
-    int tbslen = oqs_key->md_len;
-    void* tbs = oqs_key->md_data;
-    if ((tbs == NULL) || (tbslen == 0)) {
-      if (getenv("ACTIVEDEBUG")) printf("WARNING: Nothing to be signed!\n");
-    }
+    if (sig != NULL) {
+       tbslen = (oqs_key->security_bits>128)?512/8:256/8; // as per https://tools.ietf.org/id/draft-ietf-lamps-cms-shakes-08.html
+       // Finalize SHAKE:
+       if (oqs_key->shake == NULL) {
+         if (getenv("ACTIVEDEBUG")) printf("OQS panic: SHAKE not set.\n");
+         return 0;
+       }
 
+       if((tbs = (unsigned char *)OPENSSL_malloc(tbslen)) == NULL) {
+         if (getenv("ACTIVEDEBUG")) printf("OQS panic: Digest alloc failed.\n");
+         return 0;
+       }
+
+       if(EVP_DigestFinalXOF(oqs_key->shake, tbs, tbslen) <= 0) {
+         if (getenv("ACTIVEDEBUG")) printf("OQS panic: Digest finalizer failed.\n");
+         return 0;
+       }
+
+       if (getenv("ACTIVEDEBUG")) printf("OQS : digestsign commencing\n");
+    }
     int ret = pkey_oqs_digestsign(mctx, sig, siglen, tbs, tbslen);
     if (getenv("ACTIVEDEBUG")) printf("digestsign for sig %lx and siglen = %ld returned with %d\n", (unsigned long int)sig, (unsigned long int)*siglen, ret);
-    if (sig != NULL) {
-       OPENSSL_free(oqs_key->md_data);
-       oqs_key->md_data = NULL;
-       oqs_key->md_len = 0;
+    if (sig != NULL) { // cleanup only if it's not the empty setup call
+       OPENSSL_free(tbs);
+       EVP_MD_CTX_destroy(oqs_key->shake);
+       oqs_key->shake = NULL;
     }
-    else
+    if (ret <= 0) {
+       if (getenv("ACTIVEDEBUG")) printf("OQS panic: Digestsign failed.\n");
+    }
+    else {
        EVP_MD_CTX_set_flags(mctx, EVP_MD_CTX_FLAG_FINALISE); // don't go around again...
+    }
 
    return ret;
 }
@@ -1423,6 +1459,7 @@ static int pkey_oqs_verify(EVP_PKEY_CTX *ctx,
 }
 static int pkey_oqs_verifyctx_init(EVP_PKEY_CTX *ctx, EVP_MD_CTX *mctx) {
    if (getenv("ACTIVEDEBUG")) printf("VerifyCTX init called!\n");
+
    EVP_MD_CTX_set_flags(mctx, EVP_MD_CTX_FLAG_NO_INIT);
    EVP_MD_CTX_set_update_fn(mctx, oqs_int_update);
    EVP_MD_CTX_set_flags(mctx, EVP_MD_CTX_FLAG_FINALISE); // don't go around again...
@@ -1480,4 +1517,3 @@ DEFINE_OQS_EVP_METHODS(qteslapiii, NID_qteslapiii, "qteslapiii", "OpenSSL qTESLA
 DEFINE_OQS_EVP_METHODS(p384_qteslapiii, NID_p384_qteslapiii, "p384_qteslapiii", "OpenSSL ECDSA p384 qTESLA-p-III algorithm")
 ///// OQS_TEMPLATE_FRAGMENT_DEFINE_OQS_EVP_METHS_END
 
-#endif /* !defined(OQS_NIST_BRANCH) */
