@@ -14,8 +14,8 @@ kex_algs_master_111 = [
 ##### OQS_TEMPLATE_FRAGMENT_KEX_ALGS_MASTER_END
     ]
 sig_algs_master_111 = [
-    'rsa:3072',
-    'ecdsa',
+   'rsa:3072',
+   'ecdsa',
 ##### OQS_TEMPLATE_FRAGMENT_SIG_ALGS_MASTER_START
     # post-quantum signatures
     'oqsdefault','dilithium2','dilithium3','dilithium4','picnicl1fs','qteslapi','qteslapiii',
@@ -140,6 +140,22 @@ def run_cms(sig_alg ):
         os.path.join('..'),
         env={'SIGALG': sig_alg}
     )
+
+def test_cleanup():
+    global sig_algs
+    # cleanup all keys and certs
+    for sig_alg in sig_algs:
+        os.remove(os.path.join("..",sig_alg+"_srv.key"))
+        os.remove(os.path.join("..",sig_alg+"_srv.csr"))
+        os.remove(os.path.join("..",sig_alg+"_srv.crt"))
+        os.remove(os.path.join("..",sig_alg+"_CA.key"))
+        os.remove(os.path.join("..",sig_alg+"_CA.srl"))
+        os.remove(os.path.join("..",sig_alg+"_CA.crt"))
+    # cleanup CMS i/o files
+    os.remove(os.path.join("..","input"))
+    os.remove(os.path.join("..","result"))
+
+
 
 if __name__ == '__main__':
     try:

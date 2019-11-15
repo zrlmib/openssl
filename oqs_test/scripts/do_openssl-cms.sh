@@ -9,12 +9,9 @@
 
 set -x
 
-if [[ ${SIGALG} == "rsa:3072" || ${SIGALG} == "ecdsa"* || ${SIGALG} == "dilithium"* || ${SIGALG} == "qteslapi"* ]]; then
-   echo "Testdata" > input
-   rm -f result
-   apps/openssl cms -in input -sign -signer ${SIGALG}_srv.crt -inkey ${SIGALG}_srv.key  -nodetach -outform pem -binary -out output-${SIGALG}.p7s
-   apps/openssl cms -verify -CAfile ${SIGALG}_CA.crt  -inform pem -in output-${SIGALG}.p7s -crlfeol -out result
-   diff result input
-else # No test
-   exit 0
-fi
+echo "Testdata" > input
+rm -f result
+apps/openssl cms -in input -sign -signer ${SIGALG}_srv.crt -inkey ${SIGALG}_srv.key  -nodetach -outform pem -binary -out output-${SIGALG}.p7s
+apps/openssl cms -verify -CAfile ${SIGALG}_CA.crt  -inform pem -in output-${SIGALG}.p7s -crlfeol -out result
+rm output-${SIGALG}.p7s
+diff result input
