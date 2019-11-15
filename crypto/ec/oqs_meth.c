@@ -29,12 +29,11 @@
 #include <openssl/x509.h>
 #include "internal/asn1_int.h"
 #include "internal/evp_int.h"
-/* MIB added */
-/* just a work-around :-( XXX Get APIs reverted */
+
+/* CMS work-around :-( XXX Get APIs reverted */
 # define EVP_MD_CTX_create()     EVP_MD_CTX_new()
 # define EVP_MD_CTX_destroy(ctx) EVP_MD_CTX_free((ctx))
 #include <openssl/cms.h>
-/* end MIB added */
 
 #include <oqs/oqs.h>
 
@@ -65,9 +64,8 @@ typedef struct
   EVP_PKEY *classical_pkey;
   /* Security bits for the scheme */
   int security_bits;
-  /* MIB added: */
+  /* digest engine for CMS: */
   EVP_MD_CTX * digest;
-  /* end MIB added */
 } OQS_KEY;
 
 /*
@@ -864,28 +862,11 @@ static int oqs_item_sign_##ALG(EVP_MD_CTX *ctx, const ASN1_ITEM *it, void *asn,\
     return 3;                                                                  \
 }
 
-/* MIB removed 
 #define DEFINE_OQS_SIGN_INFO_SET(ALG, NID_ALG) \
 static int oqs_sig_info_set_##ALG(X509_SIG_INFO *siginf, const X509_ALGOR *alg,  \
                             const ASN1_STRING *sig)                              \
 {                                                                                \
-    X509_SIG_INFO_set(siginf, NID_undef, NID_ALG, get_oqs_security_bits(NID_ALG),\
-                      X509_SIG_INFO_TLS);                                        \
-    return 1;                                                                    \
-}
- end MIB removed */
-
-/*MIB added */
-
-int setOQS_MD_NID(int NID_ALG) {
-    return NID_sha512;
-}
-
-#define DEFINE_OQS_SIGN_INFO_SET(ALG, NID_ALG) \
-static int oqs_sig_info_set_##ALG(X509_SIG_INFO *siginf, const X509_ALGOR *alg,  \
-                            const ASN1_STRING *sig)                              \
-{                                                                                \
-    X509_SIG_INFO_set(siginf, setOQS_MD_NID(NID_ALG), NID_ALG, get_oqs_security_bits(NID_ALG),\
+    X509_SIG_INFO_set(siginf, NID_sha512, NID_ALG, get_oqs_security_bits(NID_ALG),\
                       X509_SIG_INFO_TLS);                                        \
     return 1;                                                                    \
 }
@@ -925,39 +906,6 @@ int oqs_ameth_pkey_ctrl(EVP_PKEY *pkey, int op, long arg1, void *arg2) {
    return 0;
 }
 
-/* end MIB added */
-
-/* MIB removed 
-#define DEFINE_OQS_EVP_PKEY_ASN1_METHOD(ALG, NID_ALG, SHORT_NAME, LONG_NAME) \
-const EVP_PKEY_ASN1_METHOD ALG##_asn1_meth = { \
-    NID_ALG,                                   \
-    NID_ALG,                                   \
-    0,                                         \
-    SHORT_NAME,                                \
-    LONG_NAME,                                 \
-    oqs_pub_decode,                            \
-    oqs_pub_encode,                            \
-    oqs_pub_cmp,                               \
-    oqs_pub_print,                             \
-    oqs_priv_decode,                           \
-    oqs_priv_encode,                           \
-    oqs_priv_print,                            \
-    oqs_size,                                  \
-    oqs_bits,                                  \
-    oqs_security_bits,                         \
-    0, 0, 0, 0,                                \
-    oqs_cmp_parameters,                        \
-    0, 0,                                      \
-    oqs_free,                                  \
-    0, 0, 0,                                   \
-    oqs_item_verify,                           \
-    oqs_item_sign_##ALG,                       \
-    oqs_sig_info_set_##ALG,                    \
-    0, 0, 0, 0, 0,                             \
-};
- end MIB removed */
-
-/* MIB added */
 #define DEFINE_OQS_EVP_PKEY_ASN1_METHOD(ALG, NID_ALG, SHORT_NAME, LONG_NAME) \
 const EVP_PKEY_ASN1_METHOD ALG##_asn1_meth = { \
     NID_ALG,                                   \
@@ -986,9 +934,6 @@ const EVP_PKEY_ASN1_METHOD ALG##_asn1_meth = { \
     oqs_sig_info_set_##ALG,                    \
     0, 0, 0, 0, 0,                             \
 };
-
-/* end MIB added */
-
 
 static int pkey_oqs_keygen(EVP_PKEY_CTX *ctx, EVP_PKEY *pkey)
 {
@@ -1253,50 +1198,30 @@ static int pkey_oqs_ctrl(EVP_PKEY_CTX *ctx, int type, int p1, void *p2)
 {
     switch (type) {
     case EVP_PKEY_CTRL_MD:
-        /* Only NULL allowed as digest */
+        /* NULL allowed as digest */
         if (p2 == NULL)
             return 1;
-        /* MIB added */
+        /* accept SHA512 as digest for CMS */
         if (*(int*)p2 == NID_sha512) {
                if (getenv("ACTIVEDEBUG")) printf("TBD/Approving digest %d\n", *(int*)p2);
                return 1;
         }
-        /* end MIB added */
         ECerr(EC_F_PKEY_OQS_CTRL, EC_R_WRONG_DIGEST);
         return 0;
 
     case EVP_PKEY_CTRL_DIGESTINIT:
-        /* MIB added */
         if (getenv("ACTIVEDEBUG")) printf("TBD/Do Digest Init...\n");
-        /* end MIB added */
         return 1;
 
-    /* MIB added */
     case EVP_PKEY_CTRL_CMS_SIGN:
         if (getenv("ACTIVEDEBUG")) printf("TBD/Do CMS SIGN...\n");
         return 1;
     }
     if (getenv("ACTIVEDEBUG")) printf("Unknown PKEY CTRL type: %d\n", type);
     ECerr(EC_F_PKEY_OQS_CTRL, ERR_R_FATAL);
-    /* end MIB added */
     return -2;
 }
 
-/* MIB removed:
-#define DEFINE_OQS_EVP_PKEY_METHOD(ALG, NID_ALG)    \
-const EVP_PKEY_METHOD ALG##_pkey_meth = {           \
-    NID_ALG, EVP_PKEY_FLAG_SIGCTX_CUSTOM,           \
-    0, 0, 0, 0, 0, 0,                               \
-    pkey_oqs_keygen,                                \
-    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, \
-    pkey_oqs_ctrl,                                  \
-    0,                                              \
-    pkey_oqs_digestsign,                            \
-    pkey_oqs_digestverify                           \
-};
-end MIB removed */
-
-/* MIB added */
 static int pkey_oqs_sign_init(EVP_PKEY_CTX *ctx) {
    if (getenv("ACTIVEDEBUG")) printf("Sign init called\n");
    return 1;
@@ -1441,7 +1366,6 @@ const EVP_PKEY_METHOD ALG##_pkey_meth = {           \
     0, 0, 0,                                        \
     pkey_oqs_digestcustom                           \
 };
-/* end MIB added */
 
 #define DEFINE_OQS_EVP_METHODS(ALG, NID_ALG, SHORT_NAME, LONG_NAME)   \
 DEFINE_OQS_ITEM_SIGN(ALG, NID_ALG)                                    \
